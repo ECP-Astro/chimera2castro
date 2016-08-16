@@ -16,11 +16,13 @@ FCOMP	   = gfortran
 FFLAGS    += -ffree-line-length-none
 fFLAGS    += -ffree-line-length-none
 
+DEFINES += -DDO_PROBLEM_POST_INIT
+
 USE_MPI    = TRUE
 USE_OMP    = TRUE
 
 USE_GRAV   = TRUE
-USE_GR     = TRUE
+USE_GR     = FALSE
 USE_POINTMASS = TRUE
 
 USE_REACT  = TRUE
