@@ -16,6 +16,8 @@ FCOMP	   = gfortran
 FFLAGS    += -ffree-line-length-none
 fFLAGS    += -ffree-line-length-none
 
+DEFINES += -DDO_PROBLEM_POST_INIT
+
 USE_MPI    = TRUE
 USE_OMP    = TRUE
 
