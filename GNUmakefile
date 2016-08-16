@@ -20,7 +20,7 @@ USE_MPI    = TRUE
 USE_OMP    = TRUE
 
 USE_GRAV   = TRUE
-USE_GR     = TRUE
+USE_GR     = FALSE
 USE_POINTMASS = TRUE
 
 USE_REACT  = TRUE
@@ -37,11 +37,13 @@ ifdef MICROPHYSICS_HOME
 
 # This sets the EOS directory in $(MICROPHYSICS_HOME)/eos
 EOS_dir     := helmholtz
+#EOS_dir     := stellarcollapse
 
 # This sets the network directory in $(MICROPHYSICS_HOME)/networks
 Network_dir := aprox21
-#Network_dir := $(MICROPHYSICS_HOME)/networks/aprox21
-#GENERAL_NET_INPUTS = $(MICROPHYSICS_HOME)/networks/$(Network_dir)/alp56.net
+#Network_dir := anp56
+#Network_dir := $(MICROPHYSICS_HOME)/networks/anp56
+#GENERAL_NET_INPUTS = $(MICROPHYSICS_HOME)/networks/$(Network_dir)/anp56.net
 
 INTEGRATOR_DIR := BS
 
