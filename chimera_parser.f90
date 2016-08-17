@@ -106,6 +106,9 @@ module chimera_parser_module
   integer(hsize_t) :: slab_offset4d(4)
   integer(hsize_t) :: slab_offset5d(5)
 
+  integer, save :: nquad
+  real (dp_t), allocatable, save :: xquad(:), wquad(:), norm_quad
+
   public :: open_chimera_file, read_chimera_file, close_chimera_file
 
 contains
@@ -674,5 +677,106 @@ contains
 
     return
   end subroutine interp2d_chimera
+
+  subroutine interp2d_quad_chimera( rad_out, theta_out, state_in, state_out, interp_method )
+
+    use bl_constants_module
+    use bl_error_module
+    use model_interp_module, only: interp2d_linear, interp2d_spline
+    use interpolate_module, only: locate
+
+    ! input variables
+    real (dp_t), intent(in) :: rad_out(:,:,:,:)
+    real (dp_t), intent(in) :: theta_out(:,:,:,:)
+    real (dp_t), intent(in) :: state_in(:,:)
+    integer, intent(in) :: interp_method
+
+    ! output variables
+    real (dp_t), intent(out) :: state_out(size(rad_out,3),size(rad_out,4))
+
+    ! local variables
+    integer :: irad(size(xquad),size(xquad))
+    integer :: irad_max
+
+    integer :: itheta(size(xquad),size(xquad))
+    integer :: itheta_max
+
+    real (dp_t) :: vol_rad_quad(size(xquad),size(xquad))
+    real (dp_t) :: vol_theta_quad(size(xquad),size(xquad))
+
+    real (dp_t) :: dvol1, dvol2
+    real (dp_t) :: state_quad(size(xquad),size(xquad))
+
+    integer :: i, ii, j, jj, n
+
+    irad_max = imax_in
+    itheta_max = jmax_in
+
+    if ( interp_method == 1 ) then
+
+      do j = 1, size(rad_out,4)
+        do i = 1, size(rad_out,3)
+          vol_rad_quad   = third * rad_out(:,:,i,j)**3
+          vol_theta_quad = one - cos( theta_out(:,:,i,j) )
+
+          irad(:,:) = 0
+          itheta(:,:) = 0
+          do jj = 1, nquad
+            do ii = 1, nquad
+              if ( vol_rad_quad(ii,jj) <= vol_rad_cntr_in(1) ) then
+                irad(ii,jj) = 0
+              else if ( vol_rad_quad(ii,jj) >= vol_rad_cntr_in(irad_max) ) then
+                irad(ii,jj) = irad_max
+              else
+                irad(ii,jj) = locate( vol_rad_quad(ii,jj), irad_max, vol_rad_cntr_in ) - 1
+              end if
+              if ( vol_theta_quad(ii,jj) <= vol_theta_cntr_in(1) ) then
+                itheta(ii,jj) = 0
+              else if ( vol_theta_quad(ii,jj) >= vol_theta_cntr_in(itheta_max) ) then
+                itheta(ii,jj) = itheta_max
+              else
+                itheta(ii,jj) = locate( vol_theta_quad(ii,jj), itheta_max, vol_theta_cntr_in ) - 1
+              end if
+            end do
+          end do
+
+          call interp2d_linear( irad, irad_max, itheta, itheta_max, vol_rad_cntr_in, vol_theta_cntr_in, state_in, &
+          &                     vol_rad_quad, vol_theta_quad, state_quad )
+
+          state_out(i,j) = zero
+          do jj = 1, nquad
+            do ii = 1, nquad
+              state_out(i,j) = state_out(i,j) + state_quad(ii,jj) * wquad(ii) * wquad(jj)
+            end do
+          end do
+          state_out(i,j) = state_out(i,j) * norm_quad
+        end do
+      end do
+
+    else if ( interp_method == 2 ) then
+      do j = 1, size(rad_out,4)
+        do i = 1, size(rad_out,3)
+          vol_rad_quad   = third * rad_out(:,:,i,j)**3
+          vol_theta_quad = one - cos( theta_out(:,:,i,j) )
+
+          call interp2d_spline( vol_rad_cntr_in(1:irad_max), vol_theta_cntr_in(1:itheta_max), state_in(1:irad_max,1:itheta_max), &
+          &                     vol_rad_quad, vol_theta_quad, state_quad )
+
+          state_out(i,j) = zero
+          do jj = 1, nquad
+            do ii = 1, nquad
+              state_out(i,j) = state_out(i,j) + state_quad(ii,jj) * wquad(ii) * wquad(jj)
+            end do
+          end do
+          state_out(i,j) = state_out(i,j) * norm_quad
+
+        end do
+      end do
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp2d_quad_chimera
 
 end module chimera_parser_module
