@@ -1,4 +1,4 @@
-CASTRO_DIR ?= ../..
+CASTRO_HOME ?= ../..
 
 PRECISION  = DOUBLE
 PROFILE    = FALSE
@@ -58,4 +58,4 @@ endif
 Bpack   := ./Make.package
 Blocs   := .
 
-include $(CASTRO_DIR)/Exec/Make.Castro
+include $(CASTRO_HOME)/Exec/Make.Castro
