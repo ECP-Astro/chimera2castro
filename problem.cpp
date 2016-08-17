@@ -68,6 +68,12 @@ Castro::problem_post_init ()
 
     ParallelDescriptor::ReduceRealSum(radial_mass.dataPtr(),n1d);
 
+    Array<Real> grav(n1d, 0.0);
+    Array<Real> phi(n1d, 0.0);
+    // Integrate radially outward to define the gravity
+    ca_integrate_phi(radial_mass.dataPtr(),grav.dataPtr(),
+                     phi.dataPtr(),&dr,&n1d);
+
     int index = r_sync/dr;
     BL_ASSERT(index < n1d);
 
@@ -76,6 +82,8 @@ Castro::problem_post_init ()
     set_pointmass(&point_mass);
 
     if (ParallelDescriptor::IOProcessor()) {
+	std::cout << "problem_post_init:: computed g(r) as   " << grav[index]
+		  << ".  Do NOT forget to update inputs file." << std::endl;
 	std::cout << "problem_post_init:: reset pointmass to " << point_mass
 		  << ".  Do NOT forget to update inputs file." << std::endl;
     }
