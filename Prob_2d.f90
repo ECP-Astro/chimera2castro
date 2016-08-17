@@ -8,8 +8,9 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use bl_types
   use eos_module
   use parallel, only: parallel_IOProcessor
-  use meth_params_module, only : point_mass
   use prob_params_module, only : center
+  use interpolate_module, only: locate
+  use model_interp_module, only: interp1d_linear
 
   implicit none
   integer :: init, namlen
@@ -17,7 +18,9 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   real (dp_t) :: problo(2), probhi(2)
 
   integer :: untin,i,j,k,dir
-  real (dp_t) tmp_r, tmp_z
+  real (dp_t) :: probhi_r, rcyl, zcyl, r, dr, dvol, volr, dvolr, gr
+  real (dp_t) :: mass_chim, mass_mesa, vol_chim, vol_mesa
+  real (dp_t) :: tmp1, tmp2, tmp3, domega
 
   namelist /fortin/ model_name
   namelist /fortin/ mesa_name
@@ -85,20 +88,90 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
     max_radius = rad_edge_in(imax_in+1)
   end if
 
-  point_mass = zero
-  do i = imin_in, imax_in
-    do j = jmin_in, jmax_in
-      tmp_r = rad_cntr_in(i) * sin( theta_cntr_in(j) )
-      tmp_z = rad_cntr_in(i) * cos( theta_cntr_in(j) )
-      if ( tmp_r <= problo(1) .and. tmp_z <= problo(2) ) then
-        point_mass = point_mass + sum( zone_mass_in(i,j,:) )
-      else if ( vol_rad_cntr_in(i) <= third*min_radius**3 ) then
-        point_mass = point_mass + sum( zone_mass_in(i,j,:) )
+  ! compute largest radius in spherical coordinates
+  probhi_r = sqrt(max(abs(problo(2)),abs(probhi(2)))**2+probhi(1)**2)
+
+  ! integrate mass from CHIMERA model on CASTRO grid
+  mass_chim = zero
+  vol_chim = zero
+  do j = jmin_in, jmax_in
+    do i = imin_in, imax_in
+      if ( rad_edge_in(i) < max_radius ) then
+        rcyl = rad_cntr_in(i) * sin( theta_cntr_in(j) )
+        zcyl = rad_cntr_in(i) * cos( theta_cntr_in(j) )
+        if ( rcyl > problo(1) .and. rcyl < probhi(1) .and. zcyl > problo(2) .and. zcyl < probhi(2) ) then
+          if ( rad_edge_in(i+1) <= max_radius ) then
+            mass_chim = mass_chim + sum(zone_mass_in(i,j,kmin_in:kmax_in))
+            vol_chim = vol_chim + sum(volume_in(i,j,kmin_in:kmax_in))
+          else
+            dr = rad_edge_in(i+1) - max_radius
+            dvolr = dr * ( rad_edge_in(i) * max_radius + dr * dr * third )
+            dvol  = sum(domega_in(j,kmin_in:kmax_in)) * ( dvol_rad_in(i) - dvolr )
+
+            vol_chim = vol_chim + dvol
+            mass_chim = mass_chim + sum( dens_in(i,j,kmin_in:kmax_in) * domega_in(j,kmin_in:kmax_in) ) * ( dvol_rad_in(i) - dvolr )
+          end if
+        end if
       end if
     end do
   end do
+
+  ! integrate mass from MESA model on CASTRO grid
+  mass_mesa = zero
+  vol_mesa = zero
+  do i = 1, nx_mesa_in
+    if ( rad_edge_mesa_in(i+1) > max_radius .and. &
+    &    rad_edge_mesa_in(i)   < probhi_r ) then
+
+      r = half * ( rad_edge_mesa_in(i) + rad_edge_mesa_in(i+1) )
+
+      tmp1 = min( one, max( -one, probhi(2)/r ) )
+      tmp2 = min( one, max( -one, problo(2)/r ) )
+      tmp3 = two * sqrt( one - min( one, probhi(1)/r )**2 )
+
+      domega = two * m_pi * ( tmp1 - tmp2 - tmp3 )
+      domega = min( four * m_pi, max( zero, domega ) )
+
+      dvolr = zero
+      if ( rad_edge_mesa_in(i+1) > probhi_r ) then
+        dr = rad_edge_mesa_in(i+1) - probhi_r
+        dvolr = dvolr + dr * ( probhi_r * rad_edge_mesa_in(i) + dr * dr * third )
+      end if
+
+      if ( rad_edge_mesa_in(i) < max_radius ) then
+        dr = max_radius - rad_edge_mesa_in(i) 
+        dvolr = dvolr + dr * ( rad_edge_mesa_in(i) * max_radius + dr * dr * third )
+      end if
+
+      dvol = domega * ( dvol_rad_mesa_in(i) - dvolr )
+
+      vol_mesa = vol_mesa + dvol
+      mass_mesa = mass_mesa + dvol * dens_mesa_in(i)
+
+    end if
+  end do
+
+  ! Get the gravitational acceleration to compare with CASTRO
+  r = min( probhi_r, max_radius )
+  volr = third * r**3
+  if ( volr <= vol_rad_cntr_in(1) ) then
+    i = 0
+  else if ( volr >= vol_rad_cntr_in(imax_in) ) then
+    i = imax_in
+  else
+    i = locate( volr, imax_in, vol_rad_cntr_in ) - 1
+  end if
+  call interp1d_linear( i, imax_in, vol_rad_cntr_in, grad_avg_in, volr, gr )
+
   if (parallel_IOProcessor()) then
-    write(*,*) 'point_mass=',point_mass
+    write(*,'(a,2es23.15)') 'average g(r) (chimera)        =',r,gr
+
+    write(*,'(a,2es23.15)') 'total mass   (chimera, mesa)  =',mass_chim,mass_mesa
+    write(*,'(a,es23.15)')  'total mass   (chimera + mesa) =',mass_chim+mass_mesa
+
+    write(*,'(a,2es23.15)') 'total volume (chimera, mesa)  =',vol_chim,vol_mesa
+    write(*,'(a,es23.15)')  'total volume (chimera + mesa) =',vol_chim+vol_mesa
+    write(*,'(a,es23.15)')  'total volume (castro)         =',m_pi * (probhi(1)**2-problo(1)**2) * ( probhi(2)-problo(2) )
   end if
 
   center(1) = zero

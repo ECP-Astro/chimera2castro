@@ -8,9 +8,45 @@ module model_interp_module
   integer, parameter :: kx = 3, ky = 3, iknot = 0
   integer, parameter :: idx = 0, idy = 0
 
+  interface interp1d_linear
+    module procedure interp1d_linear_vec
+    module procedure interp1d_linear_scalar
+  end interface interp1d_linear
+
 contains
 
-  subroutine interp1d_linear( ix, ix_max, x_in, f_in, x_out, f_out )
+  subroutine interp1d_linear_scalar( ix, ix_max, x_in, f_in, x_out, f_out )
+
+    ! input variables
+    integer, intent(in) :: ix, ix_max
+    real (dp_t), intent(in) :: x_in(:)
+    real (dp_t), intent(in) :: f_in(:)
+    real (dp_t), intent(in) :: x_out
+
+    ! output variables
+    real (dp_t), intent(out) :: f_out
+
+    ! local variables
+    real (dp_t) :: dx0, dx1, dx
+    integer :: j
+
+    if ( ix < ix_max ) then
+      dx  = x_in(ix+1) - x_in(ix)
+      dx1 = (x_out - x_in(ix))/dx
+      dx0 = one - dx1
+      f_out = dx0*f_in(ix) + dx1*f_in(ix+1)
+    else if ( ix == 0 ) then
+      f_out = f_in(1)
+    else if ( ix == ix_max ) then
+      f_out = f_in(ix_max)
+    else
+      f_out = zero
+    end if
+
+    return
+  end subroutine interp1d_linear_scalar
+
+  subroutine interp1d_linear_vec( ix, ix_max, x_in, f_in, x_out, f_out )
 
     ! input variables
     integer, intent(in) :: ix(:), ix_max
@@ -41,7 +77,7 @@ contains
     end do
 
     return
-  end subroutine interp1d_linear
+  end subroutine interp1d_linear_vec
 
   subroutine interp1d_spline( x_in, f_in, x_out, f_out )
 

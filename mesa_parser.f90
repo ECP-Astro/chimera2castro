@@ -1,5 +1,6 @@
 module mesa_parser_module
 
+  use parallel, only: parallel_IOProcessor
   use bl_types
 
   implicit none
@@ -13,7 +14,9 @@ module mesa_parser_module
   real (dp_t), allocatable, save :: dvol_rad_mesa_in(:)
   real (dp_t), allocatable, save :: vol_rad_edge_mesa_in(:)
   real (dp_t), allocatable, save :: vol_rad_cntr_mesa_in(:)
+  real (dp_t), allocatable, save :: zone_mass_mesa_in(:)
   real (dp_t), allocatable, save :: vrad_mesa_in(:)
+  real (dp_t), allocatable, save :: ye_mesa_in(:)
   real (dp_t), allocatable, save :: xn_mesa_in(:,:)
 
   real (dp_t), allocatable, save :: a_nuc_mesa_in(:)
@@ -96,10 +99,12 @@ module mesa_parser_module
     allocate (dens_mesa_in(nx_mesa_in))
     allocate (temp_mesa_in(nx_mesa_in))
     allocate (rad_edge_mesa_in(nx_mesa_in+1))
-    allocate (dvol_rad_mesa_in(nx_mesa_in+1))
+    allocate (dvol_rad_mesa_in(nx_mesa_in))
     allocate (vol_rad_edge_mesa_in(nx_mesa_in+1))
     allocate (vol_rad_cntr_mesa_in(nx_mesa_in))
+    allocate (zone_mass_mesa_in(nx_mesa_in))
     allocate (vrad_mesa_in(nx_mesa_in))
+    allocate (ye_mesa_in(nx_mesa_in))
     allocate (xn_mesa_in(nx_mesa_in,nspec))
     allocate (xn_read(nnc_mesa_in))
     allocate (a_nuc_mesa_in(nnc_mesa_in))
@@ -113,7 +118,9 @@ module mesa_parser_module
     dvol_rad_mesa_in = zero
     vol_rad_edge_mesa_in = zero
     vol_rad_cntr_mesa_in = zero
+    zone_mass_mesa_in = zero
     vrad_mesa_in = zero
+    ye_mesa_in = zero
     xn_mesa_in = zero
     xn_read = zero
 
@@ -140,7 +147,9 @@ module mesa_parser_module
         end if
       end do
       if ( jj > nnc_mesa_in ) then
-        write(*,'(2(a,i3),a)') ' could not find isotope (',nint(zion(ii)),',',nint(aion(ii)),') in MESA net'
+        if (parallel_IOProcessor()) then
+          write(*,'(2(a,i3),a)') ' could not find isotope (',nint(zion(ii)),',',nint(aion(ii)),') in MESA net'
+        end if
       end if
     end do
 
@@ -162,19 +171,29 @@ module mesa_parser_module
       vrad_mesa_in(jj-1) = u_read
        
       xn_mesa_in(jj-1,net_in_castro) = xn_read(net_to_castro(net_in_castro))
+
+      ye_mesa_in(jj-1) = sum( z_nuc_mesa_in * xn_read / a_nuc_mesa_in ) / sum( xn_read )
        
     end do
 
+!   if (parallel_IOProcessor()) then
+!     write(*,'(a5,2f10.4)') (nuc_name_mesa(ii), a_nuc_mesa_in(ii), z_nuc_mesa_in(ii), ii=1,nnc_mesa_in)
+!     write(*,'(f10.4)') (ye_mesa_in(ii),ii=1,nx_mesa_in)
+!   end if
+
+!   xn_mesa_in(:,nspec) = max( zero, min( one, one - sum( xn_mesa_in(:,1:nspec-1), dim=1 ) ) )
+
     close(nread)
 
-    vol_rad_edge_mesa_in(1) = third * rad_edge_mesa_in(1)**3
-    do jj = 2, nx_mesa_in+1
-      dr                       = rad_edge_mesa_in(jj) - rad_edge_mesa_in(jj-1)
-      dvol                     = dr * ( rad_edge_mesa_in(jj-1) * rad_edge_mesa_in(jj) + dr * dr * third )
-      dvol_rad_mesa_in(jj)     = dvol
-      vol_rad_edge_mesa_in(jj) = vol_rad_edge_mesa_in(jj-1) + dvol
+    vol_rad_edge_mesa_in(1)      = third * rad_edge_mesa_in(1)**3
+    do jj = 1, nx_mesa_in
+      dr                         = rad_edge_mesa_in(jj+1) - rad_edge_mesa_in(jj)
+      dvol_rad_mesa_in(jj)       = dr * ( rad_edge_mesa_in(jj) * rad_edge_mesa_in(jj+1) + dr * dr * third )
+      vol_rad_edge_mesa_in(jj+1) = vol_rad_edge_mesa_in(jj) + dvol_rad_mesa_in(jj)
     end do
-    vol_rad_cntr_mesa_in(1:nx_mesa_in) = vol_rad_edge_mesa_in(1:nx_mesa_in) + half*dvol_rad_mesa_in(2:nx_mesa_in+1)
+    vol_rad_cntr_mesa_in(1:nx_mesa_in) = vol_rad_edge_mesa_in(1:nx_mesa_in) + half*dvol_rad_mesa_in(1:nx_mesa_in)
+
+    zone_mass_mesa_in(:) = four * m_pi * dvol_rad_mesa_in (:) * dens_mesa_in(:)
 
     ! overwrite the 'zeroth' zone
 !   dens_mesa_in(1) = dens_mesa_in(2)

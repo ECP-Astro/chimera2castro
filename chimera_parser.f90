@@ -37,6 +37,7 @@ module chimera_parser_module
 
   real (dp_t), allocatable, save :: dvol_rad_in(:), dvol_theta_in(:), dvol_phi_in(:)
   real (dp_t), allocatable, save :: volume_in(:,:,:), zone_mass_in(:,:,:), domega_in(:,:)
+  real (dp_t), save :: omega_in
 
   ! time data
   real (dp_t), save :: time_in, t_bounce
@@ -54,6 +55,12 @@ module chimera_parser_module
   real (dp_t), allocatable, save :: eint_in(:,:,:)
   real (dp_t), allocatable, save :: ebind_in(:,:,:)
   real (dp_t), allocatable, save :: enpy_in(:,:,:)
+
+  ! gravity data
+  real (dp_t), allocatable, save :: grad_in(:,:,:)
+  real (dp_t), allocatable, save :: gtheta_in(:,:,:)
+  real (dp_t), allocatable, save :: gphi_in(:,:,:)
+  real (dp_t), allocatable, save :: grad_avg_in(:)
 
   ! nuclei data
   real (dp_t), allocatable, save :: a_nuc_in(:)
@@ -266,44 +273,36 @@ contains
     allocate (vol_rad_cntr_in(nx_in))
     allocate (vol_theta_cntr_in(ny_in))
     allocate (vol_phi_cntr_in(nz_in))
-    allocate (dvol_rad_in(nx_in+1))
-    allocate (dvol_theta_in(ny_in+1))
-    allocate (dvol_phi_in(nz_in+1))
+    allocate (dvol_rad_in(nx_in))
+    allocate (dvol_theta_in(ny_in))
+    allocate (dvol_phi_in(nz_in))
 
     datasize2d = (/ ny_in, nz_in /)
     call read_2d_slab('d_omega',domega_in, group_id, datasize2d)
 
-    dvol_rad_in(1)       = third * rad_edge_in(1)**3
-    vol_rad_edge_in(1)   = dvol_rad_in(1)
-    do i = 2, nx_in+1
-      dx                 = rad_edge_in(i) - rad_edge_in(i-1)
-      dvol               = dx * ( rad_edge_in(i-1) * rad_edge_in(i) + dx * dx * third )
-      dvol_rad_in(i)     = dvol
-      vol_rad_edge_in(i) = vol_rad_edge_in(i-1) + dvol
+    vol_rad_edge_in(1)     = third * rad_edge_in(1)**3
+    do i = 1, nx_in
+      dx                   = drad_edge_in(i)
+      dvol_rad_in(i)       = dx * ( rad_edge_in(i) * rad_edge_in(i+1) + dx * dx * third )
+      vol_rad_edge_in(i+1) = vol_rad_edge_in(i) + dvol_rad_in(i)
     end do
-!   vol_rad_cntr_in(1)       = vol_rad_edge_in(1) - half * dvol_rad_in(1)
-    vol_rad_cntr_in(1:nx_in) = vol_rad_edge_in(1:nx_in) + half*dvol_rad_in(2:nx_in+1)
+    vol_rad_cntr_in(1:nx_in) = vol_rad_edge_in(1:nx_in) + half*dvol_rad_in(1:nx_in)
 
-    dvol_theta_in(1) = one - cos( theta_edge_in(1) )
-    vol_theta_edge_in(1) = dvol_theta_in(1)
-    do j = 2, ny_in+1
-      dvol                 = cos( theta_edge_in(j-1) ) - cos( theta_edge_in(j) )
-      dvol_theta_in(j)     = dvol
-      vol_theta_edge_in(j) = vol_theta_edge_in(j-1) + dvol
+    vol_theta_edge_in(1) = one - cos( theta_edge_in(1) )
+    do j = 1, ny_in
+      dvol_theta_in(j)       = cos( theta_edge_in(j) ) - cos( theta_edge_in(j+1) )
+      vol_theta_edge_in(j+1) = vol_theta_edge_in(j) + dvol_theta_in(j)
     end do
-!   vol_theta_cntr_in(1)       = vol_theta_edge_in(1) - half * dvol_theta_in(1)
-    vol_theta_cntr_in(1:ny_in) = vol_theta_edge_in(1:ny_in) + half*dvol_theta_in(2:ny_in+1)
+    vol_theta_cntr_in(1:ny_in) = vol_theta_edge_in(1:ny_in) + half*dvol_theta_in(1:ny_in)
 
-    dvol_phi_in(1) = phi_edge_in(1)
-    vol_phi_edge_in(1) = dvol_phi_in(1)
-    do k = 2, nz_in+1
-      dvol               = dphi_edge_in(k)
-      dvol_phi_in(k)     = dvol
-      vol_phi_edge_in(k) = vol_phi_edge_in(k-1) + dvol
+    vol_phi_edge_in(1) = phi_edge_in(1)
+    do k = 1, nz_in
+      dvol_phi_in(k)       = dphi_edge_in(k)
+      vol_phi_edge_in(k+1) = vol_phi_edge_in(k) + dvol_phi_in(k)
     end do
-!   vol_phi_cntr_in(1) = vol_phi_edge_in(1) - half * dvol_phi_in(1)
-    vol_phi_cntr_in(1:nz_in) = vol_phi_edge_in(1:nz_in) + half*dvol_phi_in(2:nz_in+1)
+    vol_phi_cntr_in(1:nz_in) = vol_phi_edge_in(1:nz_in) + half*dvol_phi_in(1:nz_in)
 
+    omega_in = sum( domega_in(:,:) )
     do i = 1, nx_in
       volume_in(i,:,:) = dvol_rad_in(i) * domega_in(:,:)
     end do
@@ -326,6 +325,9 @@ contains
     allocate (eint_in(nx_in,ny_in,nz_in))
     allocate (ebind_in(nx_in,ny_in,nz_in))
     allocate (enpy_in(nx_in,ny_in,nz_in))
+    allocate (grad_in(nx_in,ny_in,nz_in))
+    allocate (gtheta_in(nx_in,ny_in,nz_in))
+    allocate (gphi_in(nx_in,ny_in,nz_in))
 
     ! read velocity variables
     datasize3d = (/ nx_in, ny_in, nz_in /)
@@ -344,6 +346,16 @@ contains
 
     allocate (zone_mass_in(nx_in,ny_in,nz_in))
     zone_mass_in(:,:,:) = dens_in(:,:,:) * volume_in(:,:,:)
+
+    ! read gravity variables
+    call read_ray_hyperslab('grav_x_c', grad_in,   group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('grav_y_c', gtheta_in, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('grav_z_c', gphi_in,   group_id, datasize3d, slab_offset3d)
+
+    allocate (grad_avg_in(nx_in))
+    do i = 1, nx_in
+      grad_avg_in(i) = SUM( grad_in(i,:,:) * domega_in(:,:) ) / omega_in
+    end do
 
     ! read number of nuclei
     datasize1d(1) = 2
@@ -417,6 +429,7 @@ contains
     end if
 
     xn_in(net_in_castro,:,:,:) = xn_read(net_to_castro(net_in_castro),:,:,:)
+!   xn_in(nspec,:,:,:) = xn_read(nnc_in,:,:,:)
 
     ! read nse state
     datasize3d = (/ nx_in+1, ny_in, nz_in /)
@@ -518,6 +531,10 @@ contains
        deallocate(eint_in)
        deallocate(ebind_in)
        deallocate(enpy_in)
+       deallocate(grad_in)
+       deallocate(gtheta_in)
+       deallocate(gphi_in)
+       deallocate(grad_avg_in)
        deallocate(a_nuc_in)
        deallocate(z_nuc_in)
        deallocate(m_ex_nuc_in)
