@@ -10,11 +10,11 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use prob_params_module, only : center
 
   implicit none
-  integer init, namlen
-  integer name(namlen)
-  double precision problo(1), probhi(1)
+  integer :: init, namlen
+  integer :: name(namlen)
+  real (dp_t) :: problo(1), probhi(1)
 
-  integer untin,i,j,k,dir
+  integer :: untin,i,j,k,dir
 
   namelist /fortin/ model_name
   namelist /fortin/ mesa_name
@@ -28,9 +28,9 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   !     Build "probin" filename -- the name of file containing fortin namelist.
   !     
   integer, parameter :: maxlen = 127
-  character probin*(maxlen)
-  character model*(maxlen)
-  integer ipp, ierr, ipp1
+  character(maxlen) :: probin
+  character(maxlen) :: model
+  integer :: ipp, ierr, ipp1
 
   if (namlen .gt. maxlen) call bl_error("probin file name too long")
 

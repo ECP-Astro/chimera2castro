@@ -5,18 +5,19 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use mesa_parser_module
   use bl_constants_module
   use bl_error_module
+  use bl_types
   use eos_module
   use parallel, only: parallel_IOProcessor
   use meth_params_module, only : point_mass
   use prob_params_module, only : center
 
   implicit none
-  integer init, namlen
-  integer name(namlen)
-  double precision problo(2), probhi(2)
+  integer :: init, namlen
+  integer :: name(namlen)
+  real (dp_t) :: problo(2), probhi(2)
 
-  integer untin,i,j,k,dir
-  double precision tmp_r, tmp_z
+  integer :: untin,i,j,k,dir
+  real (dp_t) tmp_r, tmp_z
 
   namelist /fortin/ model_name
   namelist /fortin/ mesa_name
@@ -30,9 +31,9 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   !     Build "probin" filename -- the name of file containing fortin namelist.
   !     
   integer, parameter :: maxlen = 127
-  character probin*(maxlen)
-  character model*(maxlen)
-  integer ipp, ierr, ipp1, n
+  character(maxlen) :: probin
+  character(maxlen) :: model
+  integer :: ipp, ierr, ipp1, n
 
   if (namlen .gt. maxlen) call bl_error("probin file name too long")
 
