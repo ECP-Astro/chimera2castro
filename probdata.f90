@@ -16,4 +16,6 @@ module probdata_module
 
   logical, save :: do_particles
 
+  logical, save :: use_quad
+
 end module probdata_module

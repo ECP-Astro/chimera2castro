@@ -9,15 +9,17 @@
   ! flag for eos_input (1=rt,2=rh,3=tp,4=rp,5=re,6=ps,7=ph,8=th)
   model_eos_input = 4
 
-  min_radius = 1.0d8
+! min_radius = 0.0d0
   max_radius = 3.0d9
+
+  use_quad = .true.
 
 /
 
 &tagging
 
-  denerr = 1.d7
-  max_denerr_lev = 4
+  denerr = 1.d10
+  max_denerr_lev = 6
 
   dengrad = 1.d5
   max_dengrad_lev = 4
@@ -38,5 +40,10 @@
 /
 
 &extern
+
+! eos_file = "Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5"
+! eos_file = "Hempel_SFHxEOS_rho234_temp180_ye60_version_1.1_20120817.h5"
+! eos_file = "HShenEOS_rho220_temp180_ye65_version_1.1_20120817.h5"
+! eos_file = "LS220_234r_136t_50y_analmu_20091212_SVNr26.h5"
 
 /

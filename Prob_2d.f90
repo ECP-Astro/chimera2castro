@@ -21,6 +21,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   real (dp_t) :: probhi_r, rcyl, zcyl, r, dr, dvol, volr, dvolr, gr
   real (dp_t) :: mass_chim, mass_mesa, vol_chim, vol_mesa
   real (dp_t) :: tmp1, tmp2, tmp3, domega
+  real (dp_t) :: wquad_sum
 
   namelist /fortin/ model_name
   namelist /fortin/ mesa_name
@@ -29,6 +30,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   namelist /fortin/ min_radius
   namelist /fortin/ max_radius
   namelist /fortin/ do_particles
+  namelist /fortin/ use_quad
 
   !
   !     Build "probin" filename -- the name of file containing fortin namelist.
@@ -52,6 +54,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   model_name = ""
   mesa_name = ""
   do_particles = .false.
+  use_quad = .false.
 
   ! Read namelists
   untin = 9 
@@ -177,6 +180,27 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   center(1) = zero
   center(2) = zero
 
+  nquad = 2
+  if ( .not. allocated( xquad ) ) allocate (xquad(nquad))
+  if ( .not. allocated( wquad ) ) allocate (wquad(nquad))
+
+  if ( nquad == 2 ) then
+    xquad(1) = -one / sqrt(three)
+    xquad(2) =  one / sqrt(three)
+    wquad(1) = one
+    wquad(2) = one
+    norm_quad = fourth
+  else
+    call gquad( nquad, xquad, wquad, nquad )
+    wquad_sum = zero
+    do j = 1, nquad
+      do i = 1, nquad
+        wquad_sum = wquad_sum + wquad(i) * wquad(j)
+      end do
+    end do
+    norm_quad = one / wquad_sum
+  end if
+
   return
 end subroutine PROBINIT
 
@@ -225,8 +249,8 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   double precision :: state(state_l1:state_h1,state_l2:state_h2,NVAR)
 
   ! local variables
-  real (dp_t) :: x(lo(1):hi(1))
-  real (dp_t) :: y(lo(2):hi(2))
+  real (dp_t) :: xcen(lo(1):hi(1))
+  real (dp_t) :: ycen(lo(2):hi(2))
   real (dp_t) :: r(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: theta(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: rho_chim(lo(1):hi(1),lo(2):hi(2))
@@ -242,56 +266,99 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   real (dp_t) :: temp_mesa(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: xn_mesa(lo(1):hi(1),lo(2):hi(2),nspec)
   real (dp_t) :: vrad_mesa(lo(1):hi(1),lo(2):hi(2))
-  integer :: i, j, n
+  integer :: i, ii, j, jj, n
+
+  real (dp_t) :: xg, yg
+  real (dp_t) :: rg(nquad,nquad,lo(1):hi(1),lo(2):hi(2))
+  real (dp_t) :: tg(nquad,nquad,lo(1):hi(1),lo(2):hi(2))
 
   type (eos_t) :: eos_state
 
-  do i = lo(1), hi(1)
-    x(i) = xlo(1) + delta(1)*(dble(i-lo(1)) + half)
-  end do
   do j = lo(2), hi(2)
-    y(j) = xlo(2) + delta(2)*(dble(j-lo(2)) + half)
-  end do
-
-  do j = lo(2), hi(2)
+    ycen(j) = xlo(2) + delta(2)*(dble(j-lo(2)) + half)
     do i = lo(1), hi(1)
-      r(i,j) = sqrt( x(i)**2 + y(j)**2 )
+      xcen(i) = xlo(1) + delta(1)*(dble(i-lo(1)) + half)
+      r(i,j) = sqrt( xcen(i)**2 + ycen(j)**2 )
       if ( r(i,j) <= zero ) then
         theta(i,j) = zero
-      else if ( y(j) == zero ) then
+      else if ( ycen(j) == zero ) then
         theta(i,j) = half * m_pi
       else
-        theta(i,j) = atan( x(i)/y(j) )
+        theta(i,j) = atan( xcen(i)/ycen(j) )
       end if
       if ( theta(i,j) < zero ) then
         theta(i,j) = theta(i,j) + m_pi
       end if
+
+      do jj = 1, nquad
+        yg = ycen(j) + half*delta(2)*xquad(jj)
+        do ii = 1, nquad
+          xg = xcen(i) + half*delta(1)*xquad(ii)
+          rg(ii,jj,i,j) = sqrt( xg**2 + yg**2 )
+          if ( rg(ii,jj,i,j) <= zero ) then
+            tg(ii,jj,i,j) = zero
+          else if ( yg == zero ) then
+            tg(ii,jj,i,j) = half * m_pi
+          else
+            tg(ii,jj,i,j) = atan( xg/yg )
+          end if
+          if ( tg(ii,jj,i,j) < zero ) then
+            tg(ii,jj,i,j) = tg(ii,jj,i,j) + m_pi
+          end if
+        end do
+      end do
     end do
   end do
 
-  select case (model_eos_input)
-    case (eos_input_rt)
-      call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
-      call interp2d_chimera( r, theta, temp_in(:,:,1), temp_chim, model_interp_method )
-    case (eos_input_rp)
-      call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
-      call interp2d_chimera( r, theta, pres_in(:,:,1), pressure_chim, model_interp_method )
-    case (eos_input_re)
-      call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
-      call interp2d_chimera( r, theta, eint_in(:,:,1), eint_chim, model_interp_method )
-    case (eos_input_ps)
-      call interp2d_chimera( r, theta, enpy_in(:,:,1), entropy_chim, model_interp_method )
-      call interp2d_chimera( r, theta, pres_in(:,:,1), pressure_chim, model_interp_method )
-    case default
-      call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
-      call interp2d_chimera( r, theta, temp_in(:,:,1), temp_chim, model_interp_method )
-  end select
-  do n = 1, nspec
-    call interp2d_chimera( r, theta, xn_in(n,:,:,1), xn_chim(:,:,n), model_interp_method )
-  end do
-  call interp2d_chimera( r, theta, vrad_in(:,:,1), vrad_chim, model_interp_method )
-  call interp2d_chimera( r, theta, vtheta_in(:,:,1), vtheta_chim, model_interp_method )
-  call interp2d_chimera( r, theta, vphi_in(:,:,1), vphi_chim, model_interp_method )
+  if ( use_quad ) then
+    select case (model_eos_input)
+      case (eos_input_rt)
+        call interp2d_quad_chimera( rg, tg, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_quad_chimera( rg, tg, temp_in(:,:,1), temp_chim, model_interp_method )
+      case (eos_input_rp)
+        call interp2d_quad_chimera( rg, tg, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_quad_chimera( rg, tg, pres_in(:,:,1), pressure_chim, model_interp_method )
+      case (eos_input_re)
+        call interp2d_quad_chimera( rg, tg, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_quad_chimera( rg, tg, eint_in(:,:,1), eint_chim, model_interp_method )
+      case (eos_input_ps)
+        call interp2d_quad_chimera( rg, tg, enpy_in(:,:,1), entropy_chim, model_interp_method )
+        call interp2d_quad_chimera( rg, tg, pres_in(:,:,1), pressure_chim, model_interp_method )
+      case default
+        call interp2d_quad_chimera( rg, tg, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_quad_chimera( rg, tg, temp_in(:,:,1), temp_chim, model_interp_method )
+    end select
+    do n = 1, nspec
+      call interp2d_quad_chimera( rg, tg, xn_in(n,:,:,1), xn_chim(:,:,n), model_interp_method )
+    end do
+    call interp2d_quad_chimera( rg, tg, vrad_in(:,:,1), vrad_chim, model_interp_method )
+    call interp2d_quad_chimera( rg, tg, vtheta_in(:,:,1), vtheta_chim, model_interp_method )
+    call interp2d_quad_chimera( rg, tg, vphi_in(:,:,1), vphi_chim, model_interp_method )
+  else
+    select case (model_eos_input)
+      case (eos_input_rt)
+        call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_chimera( r, theta, temp_in(:,:,1), temp_chim, model_interp_method )
+      case (eos_input_rp)
+        call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_chimera( r, theta, pres_in(:,:,1), pressure_chim, model_interp_method )
+      case (eos_input_re)
+        call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_chimera( r, theta, eint_in(:,:,1), eint_chim, model_interp_method )
+      case (eos_input_ps)
+        call interp2d_chimera( r, theta, enpy_in(:,:,1), entropy_chim, model_interp_method )
+        call interp2d_chimera( r, theta, pres_in(:,:,1), pressure_chim, model_interp_method )
+      case default
+        call interp2d_chimera( r, theta, dens_in(:,:,1), rho_chim, model_interp_method )
+        call interp2d_chimera( r, theta, temp_in(:,:,1), temp_chim, model_interp_method )
+    end select
+    do n = 1, nspec
+      call interp2d_chimera( r, theta, xn_in(n,:,:,1), xn_chim(:,:,n), model_interp_method )
+    end do
+    call interp2d_chimera( r, theta, vrad_in(:,:,1), vrad_chim, model_interp_method )
+    call interp2d_chimera( r, theta, vtheta_in(:,:,1), vtheta_chim, model_interp_method )
+    call interp2d_chimera( r, theta, vphi_in(:,:,1), vphi_chim, model_interp_method )
+  end if
 
 
   if ( .not. trim(mesa_name) == "" ) then
@@ -376,8 +443,6 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
         state(i,j,UTEMP) = temp_mesa(i,j)
         state(i,j,UEINT) = eos_state%e
 
-!       write(*,*) 'using mesa values'
-        
       end if
 
     end do
@@ -385,12 +450,10 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
   do j = lo(2), hi(2)
     do i = lo(1), hi(1)
-        
       state(i,j,UEINT)   = state(i,j,URHO) * state(i,j,UEINT)
       state(i,j,UEDEN)   = state(i,j,UEINT) + state(i,j,URHO)*sum( half*state(i,j,UMX:UMZ)**2 )
       state(i,j,UMX:UMZ) = state(i,j,URHO) * state(i,j,UMX:UMZ)
       state(i,j,UFS:UFS+nspec-1) = state(i,j,URHO) * state(i,j,UFS:UFS+nspec-1)
-
     end do
   end do
 
