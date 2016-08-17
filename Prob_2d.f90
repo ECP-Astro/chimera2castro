@@ -81,7 +81,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   end if
 
   if ( max_radius <= zero ) then
-    max_radius = rad_cntr_in(imax_in)
+    max_radius = rad_edge_in(imax_in+1)
   end if
 
   point_mass = zero
