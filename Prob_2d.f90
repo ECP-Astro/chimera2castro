@@ -236,8 +236,9 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   use mesa_parser_module
   use fundamental_constants_module
   use eos_module
+  use eos_type_module, only: minye, maxye
   use meth_params_module, only : NVAR, URHO, UMX, UMY, UMZ, UEINT, UFS, UTEMP, UEDEN, UFX, UFA
-  use network, only: nspec
+  use network, only: nspec, naux
   use probdata_module
 
   implicit none
@@ -262,10 +263,12 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   real (dp_t) :: vrad_chim(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: vtheta_chim(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: vphi_chim(lo(1):hi(1),lo(2):hi(2))
+  real (dp_t) :: ye_chim(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: rho_mesa(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: temp_mesa(lo(1):hi(1),lo(2):hi(2))
   real (dp_t) :: xn_mesa(lo(1):hi(1),lo(2):hi(2),nspec)
   real (dp_t) :: vrad_mesa(lo(1):hi(1),lo(2):hi(2))
+  real (dp_t) :: ye_mesa(lo(1):hi(1),lo(2):hi(2))
   integer :: i, ii, j, jj, n
 
   real (dp_t) :: xg, yg
@@ -334,6 +337,9 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
     call interp2d_quad_chimera( rg, tg, vrad_in(:,:,1), vrad_chim, model_interp_method )
     call interp2d_quad_chimera( rg, tg, vtheta_in(:,:,1), vtheta_chim, model_interp_method )
     call interp2d_quad_chimera( rg, tg, vphi_in(:,:,1), vphi_chim, model_interp_method )
+    if ( naux > 0 ) then
+      call interp2d_quad_chimera( rg, tg, ye_in(:,:,1), ye_chim, model_interp_method )
+    end if
   else
     select case (model_eos_input)
       case (eos_input_rt)
@@ -358,6 +364,9 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
     call interp2d_chimera( r, theta, vrad_in(:,:,1), vrad_chim, model_interp_method )
     call interp2d_chimera( r, theta, vtheta_in(:,:,1), vtheta_chim, model_interp_method )
     call interp2d_chimera( r, theta, vphi_in(:,:,1), vphi_chim, model_interp_method )
+    if ( naux > 0 ) then
+      call interp2d_chimera( r, theta, ye_in(:,:,1), ye_chim, model_interp_method )
+    end if
   end if
 
 
@@ -368,6 +377,9 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
       call interp2d_mesa( r, xn_mesa_in(:,n), xn_mesa(:,:,n), model_interp_method )
     end do
     call interp2d_mesa( r, vrad_mesa_in, vrad_mesa, model_interp_method )
+    if ( naux > 0 ) then
+      call interp2d_mesa( r, ye_mesa_in, ye_mesa, model_interp_method )
+    end if
   end if
 
   do j = lo(2), hi(2)
@@ -396,6 +408,9 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
             eos_state%T = temp_chim(i,j)
         end select
         eos_state%xn(:) = xn_chim(i,j,:)
+        if ( naux > 0 ) then
+          eos_state%aux = min( maxye, max( minye, ye_chim(i,j) ) )
+        end if
 
         call eos(model_eos_input, eos_state)
 
@@ -403,6 +418,9 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
         state(i,j,UMY) = vrad_chim(i,j) * cos( theta(i,j) ) - vtheta_chim(i,j) * sin( theta(i,j) )
         state(i,j,UMZ) = vphi_chim(i,j)
         state(i,j,UFS:UFS+nspec-1) = xn_chim(i,j,:)
+        if ( naux > 0 ) then
+          state(i,j,UFX) = min( maxye, max( minye, ye_chim(i,j) ) )
+        end if
 
         select case (model_eos_input)
           case (eos_input_rt)
@@ -432,12 +450,18 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
         eos_state%rho = rho_mesa(i,j)
         eos_state%T = temp_mesa(i,j)
         eos_state%xn(:) = xn_mesa(i,j,:)
+        if ( naux > 0 ) then
+          eos_state%aux = min( maxye, max( minye, ye_mesa(i,j) ) )
+        end if
         call eos(eos_input_rt, eos_state)
 
         state(i,j,UMX) = vrad_mesa(i,j) * sin( theta(i,j) )
         state(i,j,UMY) = vrad_mesa(i,j) * cos( theta(i,j) )
         state(i,j,UMZ) = zero
         state(i,j,UFS:UFS+nspec-1) = xn_mesa(i,j,:)
+        if ( naux > 0 ) then
+          state(i,j,UFX) = min( maxye, max( minye, ye_mesa(i,j) ) )
+        end if
 
         state(i,j,URHO) = rho_mesa(i,j)
         state(i,j,UTEMP) = temp_mesa(i,j)
@@ -454,6 +478,9 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
       state(i,j,UEDEN)   = state(i,j,UEINT) + state(i,j,URHO)*sum( half*state(i,j,UMX:UMZ)**2 )
       state(i,j,UMX:UMZ) = state(i,j,URHO) * state(i,j,UMX:UMZ)
       state(i,j,UFS:UFS+nspec-1) = state(i,j,URHO) * state(i,j,UFS:UFS+nspec-1)
+      if ( naux > 0 ) then
+        state(i,j,UFX)   = state(i,j,URHO) * state(i,j,UFX)
+      end if
     end do
   end do
 
