@@ -5,30 +5,37 @@ module mesa_parser_module
 
   implicit none
 
-  integer, save :: nx_mesa_in
-  integer, save :: nnc_mesa_in
+  integer, save :: nx_mesa, nnc_mesa
+  integer, save :: imin_mesa, imax_mesa
 
-  real (dp_t), allocatable, save :: dens_mesa_in(:)
-  real (dp_t), allocatable, save :: temp_mesa_in(:)
-  real (dp_t), allocatable, save :: rad_edge_mesa_in(:)
-  real (dp_t), allocatable, save :: dvol_rad_mesa_in(:)
-  real (dp_t), allocatable, save :: vol_rad_edge_mesa_in(:)
-  real (dp_t), allocatable, save :: vol_rad_cntr_mesa_in(:)
-  real (dp_t), allocatable, save :: zone_mass_mesa_in(:)
-  real (dp_t), allocatable, save :: vrad_mesa_in(:)
-  real (dp_t), allocatable, save :: ye_mesa_in(:)
-  real (dp_t), allocatable, save :: xn_mesa_in(:,:)
+  real (dp_t), allocatable, save :: x_e_mesa(:)
+  real (dp_t), allocatable, save :: dx_e_mesa(:)
+  real (dp_t), allocatable, save :: volx_e_mesa(:)
+  real (dp_t), allocatable, save :: volx_c_mesa(:)
+  real (dp_t), allocatable, save :: dvolx_e_mesa(:)
+  real (dp_t), allocatable, save :: dvolx_c_mesa(:)
+  real (dp_t), allocatable, save :: dvol_e_mesa(:)
+  real (dp_t), allocatable, save :: dmass_e_mesa(:)
 
-  real (dp_t), allocatable, save :: a_nuc_mesa_in(:)
-  real (dp_t), allocatable, save :: z_nuc_mesa_in(:)
-  real (dp_t), allocatable, save :: be_nuc_mesa_in(:)
-  character(len=5), allocatable, save :: nuc_name_mesa(:)
+  real (dp_t), allocatable, save :: u_c_mesa(:)
+  real (dp_t), allocatable, save :: rho_c_mesa(:)
+  real (dp_t), allocatable, save :: t_c_mesa(:)
+  real (dp_t), allocatable, save :: ye_c_mesa(:)
+
+  real (dp_t), allocatable, save :: xn_c_mesa(:,:)
+  real (dp_t), allocatable, save :: a_nuc_mesa(:)
+  real (dp_t), allocatable, save :: z_nuc_mesa(:)
+  real (dp_t), allocatable, save :: be_nuc_mesa(:)
+  character(len=5), allocatable, save :: name_nuc_mesa(:)
+
+  real (dp_t), allocatable, save :: a_aux_c_mesa(:)
+  real (dp_t), allocatable, save :: z_aux_c_mesa(:)
   
   contains
 
   subroutine read_mesa_file( filename )
 
-    use actual_network, only: nspec, aion, zion
+    use actual_network, only: nspec, nspec_evolve, aion, zion
     use bl_constants_module
 
     ! input variables
@@ -54,7 +61,7 @@ module mesa_parser_module
     integer :: net_to_castro(nspec)
     integer, allocatable :: net_in_castro(:)
 
-    integer :: ii, jj, kk   ! loop indices
+    integer :: i, j, k   ! loop indices
     integer :: nread        ! file unit number
     integer :: istate       ! iostat variable
 
@@ -67,7 +74,7 @@ module mesa_parser_module
     1012 format(59x,i5)
 
     ! open input data file
-    open(newunit=nread, file=trim(adjustl(filename)), status='old', iostat=istate)
+    open( newunit=nread, file=trim(adjustl(filename)), status='old', iostat=istate )
     if ( istate /= 0 ) then
       call bl_error('Aborting now -- please supply MESA file')
     end if
@@ -80,126 +87,146 @@ module mesa_parser_module
       header_name = line(1:32)
 
       if ( trim(adjustl(header_name)) == 'n_shells' ) then
-        read(line,1012) nx_mesa_in
+        read(line,1012) nx_mesa
         cycle
       end if
 
       if ( trim(adjustl(header_name)) == 'species' ) then
-        read(line,1012) nnc_mesa_in
+        read(line,1012) nnc_mesa
         exit
       end if
     end do
     read(nread,*)
 
-    write(nnc_string,'(i4)') nnc_mesa_in
+    write(nnc_string,'(i4)') nnc_mesa
     nonnse_format = '(i5,1x,7(3x,es23.16,1x),'//trim(adjustl(nnc_string))//'(3x,es23.16,1x))'
     header_format = '(181x,'//trim(adjustl(nnc_string))//'(18x,a5,4x))'
 
     ! allocate and initialize mesa variables
-    allocate (dens_mesa_in(nx_mesa_in))
-    allocate (temp_mesa_in(nx_mesa_in))
-    allocate (rad_edge_mesa_in(nx_mesa_in+1))
-    allocate (dvol_rad_mesa_in(nx_mesa_in))
-    allocate (vol_rad_edge_mesa_in(nx_mesa_in+1))
-    allocate (vol_rad_cntr_mesa_in(nx_mesa_in))
-    allocate (zone_mass_mesa_in(nx_mesa_in))
-    allocate (vrad_mesa_in(nx_mesa_in))
-    allocate (ye_mesa_in(nx_mesa_in))
-    allocate (xn_mesa_in(nx_mesa_in,nspec))
-    allocate (xn_read(nnc_mesa_in))
-    allocate (a_nuc_mesa_in(nnc_mesa_in))
-    allocate (z_nuc_mesa_in(nnc_mesa_in))
-    allocate (be_nuc_mesa_in(nnc_mesa_in))
-    allocate (nuc_name_mesa(nnc_mesa_in))
+    allocate (x_e_mesa(nx_mesa+1))
+    allocate (dx_e_mesa(nx_mesa))
+    allocate (volx_e_mesa(nx_mesa+1))
+    allocate (volx_c_mesa(nx_mesa))
+    allocate (dvolx_e_mesa(nx_mesa))
+    allocate (dvol_e_mesa(nx_mesa))
+    allocate (dmass_e_mesa(nx_mesa))
+    allocate (u_c_mesa(nx_mesa))
+    allocate (rho_c_mesa(nx_mesa))
+    allocate (t_c_mesa(nx_mesa))
+    allocate (ye_c_mesa(nx_mesa))
+    allocate (xn_read(nnc_mesa))
+    allocate (xn_c_mesa(nx_mesa,nspec))
+    allocate (a_nuc_mesa(nnc_mesa))
+    allocate (z_nuc_mesa(nnc_mesa))
+    allocate (be_nuc_mesa(nnc_mesa))
+    allocate (name_nuc_mesa(nnc_mesa))
+    allocate (a_aux_c_mesa(nx_mesa))
+    allocate (z_aux_c_mesa(nx_mesa))
 
-    dens_mesa_in = zero
-    temp_mesa_in = zero
-    rad_edge_mesa_in = zero
-    dvol_rad_mesa_in = zero
-    vol_rad_edge_mesa_in = zero
-    vol_rad_cntr_mesa_in = zero
-    zone_mass_mesa_in = zero
-    vrad_mesa_in = zero
-    ye_mesa_in = zero
-    xn_mesa_in = zero
+    x_e_mesa = zero
+    dx_e_mesa = zero
+    volx_e_mesa = zero
+    volx_c_mesa = zero
+    dvolx_e_mesa = zero
+    dmass_e_mesa = zero
+    u_c_mesa = zero
+    rho_c_mesa = zero
+    t_c_mesa = zero
+    ye_c_mesa = zero
     xn_read = zero
+    xn_c_mesa = zero
 
-    read(nread,header_format) (nuc_name_mesa(ii),ii=1,nnc_mesa_in)
+    imin_mesa = 1
+    imax_mesa = nx_mesa
+
+    read(nread,header_format) (name_nuc_mesa(i),i=1,nnc_mesa)
 
     ! convert species names to lower case
-    do ii = 1, nnc_mesa_in
-      call nuc_rename(nuc_name_mesa(ii))
+    do i = 1, nnc_mesa
+      call nuc_rename(name_nuc_mesa(i))
     end do
 
     ! get A and Z from names
-    call nucaz_from_name( nuc_name_mesa, a_nuc_mesa_in, z_nuc_mesa_in, be_nuc_mesa_in, nnc_mesa_in )
+    call nucaz_from_name( name_nuc_mesa, a_nuc_mesa, z_nuc_mesa, be_nuc_mesa, nnc_mesa )
 
     ! create lookup tables for isotopes in castro net
-    kk = 0
-    net_to_castro(:) = nnc_mesa_in+1
-    do ii = 1, nspec
-      do jj = 1, nnc_mesa_in
-        if ( nint(aion(ii)) == nint(a_nuc_mesa_in(jj)) .and. nint(zion(ii)) == nint(z_nuc_mesa_in(jj)) ) then
-          kk = kk + 1
-          net_to_castro(ii) = jj
-          itmp(kk) = ii
+    k = 0
+    net_to_castro(:) = nnc_mesa+1
+    do i = 1, nspec
+      do j = 1, nnc_mesa
+        if ( nint(aion(i)) == nint(a_nuc_mesa(j)) .and. nint(zion(i)) == nint(z_nuc_mesa(j)) ) then
+          k = k + 1
+          net_to_castro(i) = j
+          itmp(k) = i
           exit
         end if
       end do
-      if ( jj > nnc_mesa_in ) then
+      if ( j > nnc_mesa ) then
         if (parallel_IOProcessor()) then
-          write(*,'(2(a,i3),a)') ' could not find isotope (',nint(zion(ii)),',',nint(aion(ii)),') in MESA net'
+          write(*,'(2(a,i3),a)') ' could not find isotope (',nint(zion(i)),',',nint(aion(i)),') in MESA net'
         end if
       end if
     end do
 
-    if ( kk > 0 ) then
-      allocate (net_in_castro(kk))
-      net_in_castro(:) = itmp(1:kk)
+    if ( k > 0 ) then
+      allocate (net_in_castro(k))
+      net_in_castro(:) = itmp(1:k)
     else
       call bl_error("no species in MESA net in CASTRO net")
     end if
 
     ! read zones, MESA outputs these backwards (outer-most zones first)
-    do ii = 1, nx_mesa_in
+    do i = 1, nx_mesa
 
-      read(nread,nonnse_format) zone_read, lnrho_read, lnt_read, lnr_read, dum1, dum2, u_read, dum3, (xn_read(kk),kk=1,nnc_mesa_in)
-      jj = nx_mesa_in-zone_read+2
-      dens_mesa_in(jj-1) = exp( lnrho_read )
-      temp_mesa_in(jj-1) = exp( lnt_read )
-      rad_edge_mesa_in(jj) = exp( lnr_read )
-      vrad_mesa_in(jj-1) = u_read
+      read(nread,nonnse_format) zone_read, lnrho_read, lnt_read, lnr_read, dum1, dum2, u_read, dum3, (xn_read(k),k=1,nnc_mesa)
+      j = nx_mesa-zone_read+2
+      rho_c_mesa(j-1) = exp( lnrho_read )
+      t_c_mesa(j-1) = exp( lnt_read )
+      x_e_mesa(j) = exp( lnr_read )
+      u_c_mesa(j-1) = u_read
        
-      xn_mesa_in(jj-1,net_in_castro) = xn_read(net_to_castro(net_in_castro))
+      xn_c_mesa(j-1,net_in_castro) = xn_read(net_to_castro(net_in_castro))
 
-      ye_mesa_in(jj-1) = sum( z_nuc_mesa_in * xn_read / a_nuc_mesa_in ) / sum( xn_read )
-       
+      ye_c_mesa(j-1) = sum( z_nuc_mesa * xn_read / a_nuc_mesa ) / sum( xn_read )
+
+      if ( nspec > nspec_evolve ) then
+        dum1 = sum( xn_read,                       mask=(net_to_castro==nnc_mesa+1) )
+        dum2 = sum( xn_read/a_nuc_mesa,            mask=(net_to_castro==nnc_mesa+1) )
+        dum3 = sum( xn_read*z_nuc_mesa/a_nuc_mesa, mask=(net_to_castro==nnc_mesa+1) )
+        xn_c_mesa(j-1,nspec)  = dum1
+        a_aux_c_mesa(j-1) = dum1 / dum2
+        z_aux_c_mesa(j-1) = dum1 / dum3
+      else
+        a_aux_c_mesa(j-1) = zero
+        z_aux_c_mesa(j-1) = zero
+      end if
     end do
 
 !   if (parallel_IOProcessor()) then
-!     write(*,'(a5,2f10.4)') (nuc_name_mesa(ii), a_nuc_mesa_in(ii), z_nuc_mesa_in(ii), ii=1,nnc_mesa_in)
-!     write(*,'(f10.4)') (ye_mesa_in(ii),ii=1,nx_mesa_in)
+!     write(*,'(a5,2f10.4)') (name_nuc_mesa(i), a_nuc_mesa(i), z_nuc_mesa(i), i=1,nnc_mesa)
+!     write(*,'(f10.4)') (ye_c_mesa(i),i=1,nx_mesa)
 !   end if
 
-!   xn_mesa_in(:,nspec) = max( zero, min( one, one - sum( xn_mesa_in(:,1:nspec-1), dim=1 ) ) )
+!   xn_c_mesa(:,nspec) = max( zero, min( one, one - sum( xn_c_mesa(:,1:nspec-1), dim=1 ) ) )
 
     close(nread)
 
-    vol_rad_edge_mesa_in(1)      = third * rad_edge_mesa_in(1)**3
-    do jj = 1, nx_mesa_in
-      dr                         = rad_edge_mesa_in(jj+1) - rad_edge_mesa_in(jj)
-      dvol_rad_mesa_in(jj)       = dr * ( rad_edge_mesa_in(jj) * rad_edge_mesa_in(jj+1) + dr * dr * third )
-      vol_rad_edge_mesa_in(jj+1) = vol_rad_edge_mesa_in(jj) + dvol_rad_mesa_in(jj)
+    volx_e_mesa(1)     = third * x_e_mesa(1)**3
+    do j = 1, nx_mesa
+      dr               = x_e_mesa(j+1) - x_e_mesa(j)
+      dvolx_e_mesa(j)  = dr * ( x_e_mesa(j) * x_e_mesa(j+1) + dr * dr * third )
+      volx_e_mesa(j+1) = volx_e_mesa(j) + dvolx_e_mesa(j)
     end do
-    vol_rad_cntr_mesa_in(1:nx_mesa_in) = vol_rad_edge_mesa_in(1:nx_mesa_in) + half*dvol_rad_mesa_in(1:nx_mesa_in)
+    volx_c_mesa(1:nx_mesa) = volx_e_mesa(1:nx_mesa) + half*dvolx_e_mesa(1:nx_mesa)
 
-    zone_mass_mesa_in(:) = four * m_pi * dvol_rad_mesa_in (:) * dens_mesa_in(:)
+    dvol_e_mesa(:) = four * m_pi * dvolx_e_mesa(:)
+    dmass_e_mesa(:) = dvol_e_mesa(:) * rho_c_mesa(:)
 
     ! overwrite the 'zeroth' zone
-!   dens_mesa_in(1) = dens_mesa_in(2)
-!   temp_mesa_in(1) = temp_mesa_in(2)
-!   vrad_mesa_in(1) = vrad_mesa_in(2)
-!   xn_mesa_in(1,:) = xn_mesa_in(2,:)
+!   rho_c_mesa(1) = rho_c_mesa(2)
+!   t_c_mesa(1) = t_c_mesa(2)
+!   u_c_mesa(1) = u_c_mesa(2)
+!   xn_c_mesa(1,:) = xn_c_mesa(2,:)
 
     return
   end subroutine read_mesa_file
@@ -216,7 +243,7 @@ module mesa_parser_module
     integer, parameter :: uc_z_ascii=iachar('z')
 
     character(len=5) :: amass, letters, cname
-    integer :: name_len, in_ascii, jj, kk
+    integer :: name_len, in_ascii, j, k
     logical :: digit
 
     amass    = '     '
@@ -254,8 +281,8 @@ module mesa_parser_module
 
       ! scan name until you find the digit
       digit = .false.
-      do jj = 1, name_len
-        select case( cname(jj:jj) )
+      do j = 1, name_len
+        select case( cname(j:j) )
         case( '0':'9' )
           digit = .true.
         case default
@@ -263,17 +290,17 @@ module mesa_parser_module
         end select
 
         if ( digit ) then
-          letters(1:(jj-1)) = cname(1:(jj-1)) ! pick out letters
+          letters(1:(j-1)) = cname(1:(j-1)) ! pick out letters
           letters           = trim(adjustl(letters))
 
-          amass = cname(jj:name_len) ! pick out digits
+          amass = cname(j:name_len) ! pick out digits
           amass = trim(adjustl(amass))
 
           ! convert name to lower-case
-          do kk = 1, len(letters)
-            in_ascii = iachar( letters(kk:kk) )
+          do k = 1, len(letters)
+            in_ascii = iachar( letters(k:k) )
             if ( in_ascii >= uc_a_ascii .and. in_ascii <= uc_z_ascii ) then
-              letters(kk:kk) = achar( in_ascii + (lc_a_ascii - uc_a_ascii) )
+              letters(k:k) = achar( in_ascii + (lc_a_ascii - uc_a_ascii) )
             end if
           end do
 
@@ -284,7 +311,7 @@ module mesa_parser_module
 
         end if ! digit
 
-      end do ! jj = 1, name_len
+      end do ! j = 1, name_len
     end if ! name_len > 1
 
     nname = adjustr( nname )
@@ -306,7 +333,7 @@ module mesa_parser_module
     real (dp_t)          :: a_nuc(nucnum), z_nuc(nucnum), be_nuc(nucnum)
     real (dp_t)          :: a_nuc_tmp, be_nuc_tmp
     integer              :: ia_nuc, name_len
-    integer              :: ii,jj,kk   ! loop variables
+    integer              :: i,j,k   ! loop variables
     integer              :: inuc
     integer              :: istat
 
@@ -336,7 +363,7 @@ module mesa_parser_module
     open( newunit=lun_table, file="mass.mas12", status='old' )
 
     ! cycle over all species
-    do ii=1, nucnum
+    do i=1, nucnum
 
       amass    = '     '
       letters  = '     '
@@ -346,57 +373,57 @@ module mesa_parser_module
 
       be_nuc_tmp = 0.0d0
 
-      nname(ii) = trim(adjustl(nname(ii)))
-      cname    = nname(ii)
+      nname(i) = trim(adjustl(nname(i)))
+      cname    = nname(i)
       name_len = len_trim(cname)
 
       rewind(lun_table)
 
       ! cycle over length of name to determine where numbers start
       if( cname(1:name_len) .eq. 'n' ) then
-        a_nuc(ii)  = 1.0d0
-        z_nuc(ii)  = 0.0d0
-        be_nuc(ii) = 0.0d0
+        a_nuc(i)  = 1.0d0
+        z_nuc(i)  = 0.0d0
+        be_nuc(i) = 0.0d0
         letters    = ' n' 
         amass      = '1'
         cname      = ' n1'
         name_len   = 3
       else if( cname(1:name_len) .eq. 'p' ) then
-        a_nuc(ii)  = 1.0d0
-        z_nuc(ii)  = 1.0d0
-        be_nuc(ii) = 0.0d0
+        a_nuc(i)  = 1.0d0
+        z_nuc(i)  = 1.0d0
+        be_nuc(i) = 0.0d0
         letters    = 'h' 
         amass      = '1'
         cname      = 'h1'
         name_len   = 2
       else if( cname(1:name_len) .eq. 'd' ) then
-        a_nuc(ii)  = 2.0d0
-        z_nuc(ii)  = 1.0d0
-        be_nuc(ii) = 1112.283 * 1.0d-3 * a_nuc(ii)   ! to convert kev to mev
+        a_nuc(i)  = 2.0d0
+        z_nuc(i)  = 1.0d0
+        be_nuc(i) = 1112.283 * 1.0d-3 * a_nuc(i)   ! to convert kev to mev
         letters    = 'h' 
         amass      = '2'
         cname      = 'h2'
         name_len   = 2
       else if( cname(1:name_len) .eq. 't' ) then
-        a_nuc(ii)  = 3.0d0
-        z_nuc(ii)  = 1.0d0
-        be_nuc(ii) = 2827.266d0 * 1.0d-3 * a_nuc(ii)
+        a_nuc(i)  = 3.0d0
+        z_nuc(i)  = 1.0d0
+        be_nuc(i) = 2827.266d0 * 1.0d-3 * a_nuc(i)
         letters    = 'h' 
         amass      = '3'
         cname      = 'h3'
         name_len   = 2
       else if( cname(1:name_len) .eq. 'alg6' .or. cname(1:name_len) .eq. 'al-6' ) then
-        a_nuc(ii)  = 26.0d0
-        z_nuc(ii)  = 13.0d0
-        be_nuc(ii) = 8149.771d0 * 1.0d-3 * a_nuc(ii)
+        a_nuc(i)  = 26.0d0
+        z_nuc(i)  = 13.0d0
+        be_nuc(i) = 8149.771d0 * 1.0d-3 * a_nuc(i)
         letters    = 'al'
         amass      = '26'
         cname      = 'al26'
         name_len   = 4
       else if( cname(1:name_len) .eq. 'alm6' .or. cname(1:name_len) .eq. 'al*6' ) then
-        a_nuc(ii)  = 26.0d0
-        z_nuc(ii)  = 13.0d0
-        be_nuc(ii) = 8149.771d0 * 1.0d-3 * a_nuc(ii)
+        a_nuc(i)  = 26.0d0
+        z_nuc(i)  = 13.0d0
+        be_nuc(i) = 8149.771d0 * 1.0d-3 * a_nuc(i)
         letters    = 'al'
         amass      = '26'
         cname      = 'al26'
@@ -404,8 +431,8 @@ module mesa_parser_module
       else if ( name_len > 1 ) then
         ! scan name until you find the digit
         digit = .false.
-        do jj=1,name_len
-          select case( cname(jj:jj) )
+        do j=1,name_len
+          select case( cname(j:j) )
           case( '0':'9' )
             digit = .true.
           case default
@@ -413,10 +440,10 @@ module mesa_parser_module
           end select
 
           if( digit ) then
-            letters(1:(jj-1))  = cname(1:(jj-1))    ! pick out letters
+            letters(1:(j-1))  = cname(1:(j-1))    ! pick out letters
             letters            = trim(adjustl(letters))
 
-            amass = cname(jj:name_len) ! pick out digits
+            amass = cname(j:name_len) ! pick out digits
             amass = trim(adjustl(amass))
 
             read( amass, '(i5)' ) ia_nuc      ! assign character mass to real variable            
@@ -426,7 +453,7 @@ module mesa_parser_module
 
         ! scan through table until we reach the desired species
         begin = .false.
-        do kk = 1,n_masstable
+        do k = 1,n_masstable
           ! read in line-by-line
           read( lun_table, '(a124)', iostat=istat ) line
           if( istat < 0 ) exit  ! end-of-file
@@ -446,86 +473,86 @@ module mesa_parser_module
           read( line, 666 ) cc, nz, ni, zi, ai, el, oi, binding_r
 
           ! convert "#" character to decimal
-          jj = index( binding_r, "#" )
-          if( jj /= 0 ) binding_r(jj:jj) = "."
+          j = index( binding_r, "#" )
+          if( j /= 0 ) binding_r(j:j) = "."
           read( binding_r, "(f11.3)" ) binding
 
           ! convert name to lower-case
           el = trim(adjustl(el))
-          do jj = 1,len(el)
-            in_ascii = iachar( el(jj:jj) )
+          do j = 1,len(el)
+            in_ascii = iachar( el(j:j) )
             if( in_ascii >= uc_a_ascii .and. in_ascii <= uc_z_ascii ) then
-              el(jj:jj) = achar( in_ascii + (lc_a_ascii - uc_a_ascii) )
+              el(j:j) = achar( in_ascii + (lc_a_ascii - uc_a_ascii) )
             end if
           end do
 
           ! match names in mass table to network species names
           if( el .eq. letters ) then
-            z_nuc(ii)  = dble(zi)
+            z_nuc(i)  = dble(zi)
             a_nuc_tmp  = dble(ai)
             be_nuc_tmp = binding*a_nuc_tmp*1.0d-3 ! b.e. from table is [kev / a]
             if( ai .eq. ia_nuc ) then
-              a_nuc(ii)  = a_nuc_tmp
-              be_nuc(ii) = be_nuc_tmp
+              a_nuc(i)  = a_nuc_tmp
+              be_nuc(i) = be_nuc_tmp
               exit
             end if
           end if
 
-          if( kk .eq. n_masstable .and. a_nuc(ii) .ne. dble(ia_nuc) ) then
-            a_nuc(ii)  = dble(ia_nuc)
-            be_nuc(ii) = be_nuc_tmp
+          if( k .eq. n_masstable .and. a_nuc(i) .ne. dble(ia_nuc) ) then
+            a_nuc(i)  = dble(ia_nuc)
+            be_nuc(i) = be_nuc_tmp
           end if
-        end do ! do kk = 1,n_masstable
+        end do ! do k = 1,n_masstable
       end if
-    end do  ! do ii = 1,nucnum
+    end do  ! do i = 1,nucnum
 
     close(lun_table)  ! close mass table file
 
     return
   end subroutine nucaz_from_name
 
-  subroutine interp1d_mesa( rad_out, state_in, state_out, interp_method )
+  subroutine interp1d_mesa( x_out, state_in, state_out)
 
     use bl_constants_module
     use bl_error_module
-    use model_interp_module, only: interp1d_linear, interp1d_spline
     use interpolate_module, only: locate
+    use model_interp_module, only: interp1d_linear, interp1d_spline
+    use probdata_module, only: interp_method
 
     ! input variables
-    real (dp_t), intent(in) :: rad_out(:)
+    real (dp_t), intent(in) :: x_out(:)
     real (dp_t), intent(in) :: state_in(:)
-    integer, intent(in) :: interp_method
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(rad_out))
+    real (dp_t), intent(out) :: state_out(size(x_out))
 
     ! local variables
-    integer :: irad(size(rad_out))
-    integer :: irad_max
+    integer :: ix(size(x_out))
+    integer :: ix_max
 
     real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: vol_rad_out(size(rad_out))
+    real (dp_t) :: volx_out(size(x_out))
 
     integer :: i, j, n
 
-    vol_rad_out = third * rad_out**3
+    volx_out = third * x_out**3
 
     if ( interp_method == 1 ) then
 
-      irad_max = nx_mesa_in
-      irad(:) = 1
-      do i = 1, size(rad_out)
-        if ( vol_rad_out(i) <= vol_rad_cntr_mesa_in(1) ) then
-          irad(i) = 0
-        else if ( vol_rad_out(i) >= vol_rad_cntr_mesa_in(irad_max) ) then
-          irad(i) = irad_max
+      ix_max = imax_mesa
+      ix(:) = 1
+      do i = 1, size(x_out)
+        if ( volx_out(i) <= volx_c_mesa(1) ) then
+          ix(i) = 0
+        else if ( volx_out(i) >= volx_c_mesa(ix_max) ) then
+          ix(i) = ix_max
         else
-          irad(i) = locate( vol_rad_out(i), irad_max, vol_rad_cntr_mesa_in ) - 1
+          ix(i) = locate( volx_out(i), ix_max, volx_c_mesa ) - 1
         end if
       end do
-      call interp1d_linear( irad, irad_max, vol_rad_cntr_mesa_in, state_in, vol_rad_out, state_out )
+      call interp1d_linear( ix, ix_max, volx_c_mesa, state_in, volx_out, state_out )
     else if ( interp_method == 2 ) then
-      call interp1d_spline( vol_rad_cntr_mesa_in, state_in, vol_rad_out, state_out )
+      call interp1d_spline( volx_c_mesa, state_in, volx_out, state_out )
     else
       call bl_error("invalid value for interp_method")
     end if
@@ -533,51 +560,51 @@ module mesa_parser_module
     return
   end subroutine interp1d_mesa
 
-  subroutine interp2d_mesa( rad_out, state_in, state_out, interp_method )
+  subroutine interp2d_mesa( x_out, state_in, state_out )
 
     use bl_constants_module
     use bl_error_module
-    use model_interp_module, only: interp1d_linear, interp1d_spline
     use interpolate_module, only: locate
+    use model_interp_module, only: interp1d_linear, interp1d_spline
+    use probdata_module, only: interp_method
 
     ! input variables
-    real (dp_t), intent(in) :: rad_out(:,:)
+    real (dp_t), intent(in) :: x_out(:,:)
     real (dp_t), intent(in) :: state_in(:)
-    integer, intent(in) :: interp_method
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(rad_out,1),size(rad_out,2))
+    real (dp_t), intent(out) :: state_out(size(x_out,1),size(x_out,2))
 
     ! local variables
-    integer :: irad(size(rad_out,1))
-    integer :: irad_max
+    integer :: ix(size(x_out,1))
+    integer :: ix_max
 
     real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: vol_rad_out(size(rad_out,1),size(rad_out,2))
+    real (dp_t) :: volx_out(size(x_out,1),size(x_out,2))
 
     integer :: i, j, n
 
-    vol_rad_out = third * rad_out**3
+    volx_out = third * x_out**3
 
     if ( interp_method == 1 ) then
 
-      irad_max = nx_mesa_in
-      do j = 1, size(rad_out,2)
-        irad(:) = 1
-        do i = 1, size(rad_out,1)
-          if ( vol_rad_out(i,j) <= vol_rad_cntr_mesa_in(1) ) then
-            irad(i) = 0
-          else if ( vol_rad_out(i,j) >= vol_rad_cntr_mesa_in(irad_max) ) then
-            irad(i) = irad_max
+      ix_max = imax_mesa
+      do j = 1, size(x_out,2)
+        ix(:) = 1
+        do i = 1, size(x_out,1)
+          if ( volx_out(i,j) <= volx_c_mesa(1) ) then
+            ix(i) = 0
+          else if ( volx_out(i,j) >= volx_c_mesa(ix_max) ) then
+            ix(i) = ix_max
           else
-            irad(i) = locate( vol_rad_out(i,j), irad_max, vol_rad_cntr_mesa_in ) - 1
+            ix(i) = locate( volx_out(i,j), ix_max, volx_c_mesa ) - 1
           end if
         end do
-        call interp1d_linear( irad, irad_max, vol_rad_cntr_mesa_in, state_in, vol_rad_out(:,j), state_out(:,j) )
+        call interp1d_linear( ix, ix_max, volx_c_mesa, state_in, volx_out(:,j), state_out(:,j) )
       end do
     else if ( interp_method == 2 ) then
-      do j = 1, size(rad_out,2)
-        call interp1d_spline( vol_rad_cntr_mesa_in, state_in, vol_rad_out(:,j), state_out(:,j) )
+      do j = 1, size(x_out,2)
+        call interp1d_spline( volx_c_mesa, state_in, volx_out(:,j), state_out(:,j) )
       end do
     else
       call bl_error("invalid value for interp_method")

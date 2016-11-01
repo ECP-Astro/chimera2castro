@@ -24,7 +24,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   namelist /fortin/ mesa_name
   namelist /fortin/ model_eos_input
   namelist /fortin/ model_interp_method
-  namelist /fortin/ min_radius
+  namelist /fortin/ r_inner
   namelist /fortin/ max_radius
   namelist /fortin/ do_particles
 
@@ -45,7 +45,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   ! set namelist defaults
   model_eos_input = eos_input_rt
   model_interp_method = 1
-  min_radius = zero
+  r_inner = zero
   max_radius = zero
   model_name = ""
   mesa_name = ""
@@ -160,7 +160,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   do i = 1, imax_in
     if ( rad_cntr_in(i) <= problo(1) ) then
       point_mass = point_mass + sum( zone_mass_in(i,:,:) )
-    else if ( vol_rad_cntr_in(i) <= third*min_radius**3 ) then
+    else if ( vol_rad_cntr_in(i) <= third*r_inner**3 ) then
       point_mass = point_mass + sum( zone_mass_in(i,:,:) )
     end if
   end do

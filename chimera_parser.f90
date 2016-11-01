@@ -15,78 +15,85 @@ module chimera_parser_module
   implicit none
 
   ! array dimensions
-  integer, save :: nx_in, ny_in, nz_in, nnc_in, npart_in, npart_shell_in
+  integer, save :: nx_chim, ny_chim, nz_chim, nnc_chim, npart_chim, npart_shell_chim
 
   ! radial index bounds
-  integer, save :: imin_in, imax_in
+  integer, save :: imin_chim, imax_chim
 
   ! theta index bounds
-  integer, save :: jmin_in, jmax_in
+  integer, save :: jmin_chim, jmax_chim
 
   ! phi index bounds
-  integer, save :: kmin_in, kmax_in
+  integer, save :: kmin_chim, kmax_chim
 
   ! grid coordinates
-  real (dp_t), allocatable, save :: rad_edge_in(:), drad_edge_in(:), rad_cntr_in(:), drad_cntr_in(:)
-  real (dp_t), allocatable, save :: theta_edge_in(:), dtheta_edge_in(:), theta_cntr_in(:), dtheta_cntr_in(:)
-  real (dp_t), allocatable, save :: phi_edge_in(:), dphi_edge_in(:), phi_cntr_in(:), dphi_cntr_in(:)
+  real (dp_t), allocatable, save :: x_e_chim(:), dx_e_chim(:)
+  real (dp_t), allocatable, save :: y_e_chim(:), dy_e_chim(:)
+  real (dp_t), allocatable, save :: z_e_chim(:), dz_e_chim(:)
+  real (dp_t), allocatable, save :: x_c_chim(:), dx_c_chim(:)
+  real (dp_t), allocatable, save :: y_c_chim(:), dy_c_chim(:)
+  real (dp_t), allocatable, save :: z_c_chim(:), dz_c_chim(:) 
 
-  real (dp_t), allocatable, save :: vol_rad_edge_in(:), vol_rad_cntr_in(:)
-  real (dp_t), allocatable, save :: vol_theta_edge_in(:), vol_theta_cntr_in(:)
-  real (dp_t), allocatable, save :: vol_phi_edge_in(:), vol_phi_cntr_in(:)
+  real (dp_t), allocatable, save :: volx_e_chim(:), dvolx_e_chim(:)
+  real (dp_t), allocatable, save :: voly_e_chim(:), dvoly_e_chim(:)
+  real (dp_t), allocatable, save :: volz_e_chim(:), dvolz_e_chim(:)
+  real (dp_t), allocatable, save :: volx_c_chim(:), dvolx_c_chim(:)
+  real (dp_t), allocatable, save :: voly_c_chim(:), dvoly_c_chim(:)
+  real (dp_t), allocatable, save :: volz_c_chim(:), dvolz_c_chim(:)
 
-  real (dp_t), allocatable, save :: dvol_rad_in(:), dvol_theta_in(:), dvol_phi_in(:)
-  real (dp_t), allocatable, save :: volume_in(:,:,:), zone_mass_in(:,:,:), domega_in(:,:)
-  real (dp_t), save :: omega_in
+  real (dp_t), allocatable, save :: domega_chim(:,:)
+  real (dp_t), allocatable, save :: dvol_e_chim(:,:,:)
+  real (dp_t), allocatable, save :: dmass_e_chim(:,:,:)
+  real (dp_t), save :: omega_chim
 
   ! time data
-  real (dp_t), save :: time_in, t_bounce
+  real (dp_t), save :: time_chim, t_bounce
 
   ! fluid velocities
-  real (dp_t), allocatable, save :: vrad_in(:,:,:)
-  real (dp_t), allocatable, save :: vtheta_in(:,:,:)
-  real (dp_t), allocatable, save :: vphi_in(:,:,:)
+  real (dp_t), allocatable, save :: u_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: v_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: w_c_chim(:,:,:)
 
   ! thermo data
-  real (dp_t), allocatable, save :: dens_in(:,:,:)
-  real (dp_t), allocatable, save :: temp_in(:,:,:)
-  real (dp_t), allocatable, save :: ye_in(:,:,:)
-  real (dp_t), allocatable, save :: pres_in(:,:,:)
-  real (dp_t), allocatable, save :: eint_in(:,:,:)
-  real (dp_t), allocatable, save :: ebind_in(:,:,:)
-  real (dp_t), allocatable, save :: enpy_in(:,:,:)
+  real (dp_t), allocatable, save :: rho_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: t_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: ye_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: p_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: ei_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: eb_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: s_c_chim(:,:,:)
 
   ! gravity data
-  real (dp_t), allocatable, save :: grad_in(:,:,:)
-  real (dp_t), allocatable, save :: gtheta_in(:,:,:)
-  real (dp_t), allocatable, save :: gphi_in(:,:,:)
-  real (dp_t), allocatable, save :: grad_avg_in(:)
+  real (dp_t), allocatable, save :: gravx_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: gravy_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: gravz_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: gravx_c_avg_chim(:)
 
   ! nuclei data
-  real (dp_t), allocatable, save :: a_nuc_in(:)
-  real (dp_t), allocatable, save :: z_nuc_in(:)
-  real (dp_t), allocatable, save :: m_ex_nuc_in(:)
-  real (dp_t), allocatable, save :: be_nuc_in(:)
-  character(len=5), allocatable, save :: nuc_name_in(:)
+  real (dp_t), allocatable, save :: a_nuc_chim(:)
+  real (dp_t), allocatable, save :: z_nuc_chim(:)
+  real (dp_t), allocatable, save :: mex_nuc_chim(:)
+  real (dp_t), allocatable, save :: be_nuc_chim(:)
+  character (5), allocatable, save :: name_nuc_chim(:)
 
   ! composition data
   real (dp_t), allocatable, save :: xn_read(:,:,:,:)
-  real (dp_t), allocatable, save :: xn_in(:,:,:,:)
-  integer,     allocatable, save :: nse_in(:,:,:)
+  real (dp_t), allocatable, save :: xn_c_chim(:,:,:,:)
+  integer,     allocatable, save :: nse_c_chim(:,:,:)
 
   ! representative heavy/auxiliary data
-  real (dp_t), allocatable, save :: a_nuc_rep_in(:,:,:)
-  real (dp_t), allocatable, save :: z_nuc_rep_in(:,:,:)
-  real (dp_t), allocatable, save :: be_nuc_rep_in(:,:,:)
+  real (dp_t), allocatable, save :: a_aux_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: z_aux_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: be_aux_c_chim(:,:,:)
 
   ! particle data
-  real (dp_t), allocatable, save :: prad_in(:)
-  real (dp_t), allocatable, save :: ptheta_in(:)
-  real (dp_t), allocatable, save :: pphi_in(:)
+  real (dp_t), allocatable, save :: px_chim(:)
+  real (dp_t), allocatable, save :: py_chim(:)
+  real (dp_t), allocatable, save :: pz_chim(:)
 
-  ! model_initialized will be .true. once the model is read in and the
+  ! chimera_initialized will be .true. once the model is read in and the
   ! model data arrays are initialized and filled
-  logical, save :: model_initialized = .false.
+  logical, save :: chimera_initialized = .false.
 
   ! HDF5 variables
   integer(hid_t) :: file_id
@@ -106,19 +113,16 @@ module chimera_parser_module
   integer(hsize_t) :: slab_offset4d(4)
   integer(hsize_t) :: slab_offset5d(5)
 
-  integer, save :: nquad
-  real (dp_t), allocatable, save :: xquad(:), wquad(:), norm_quad
-
   public :: open_chimera_file, read_chimera_file, close_chimera_file
 
 contains
 
-  subroutine open_chimera_file(model_file)
+  subroutine open_chimera_file(fname)
 
     use bl_constants_module
     use bl_error_module
 
-    character(len=*), intent(in   ) :: model_file
+    character (*), intent(in) :: fname
 
     ! local variables
     integer :: i_read(1)
@@ -126,11 +130,11 @@ contains
     integer :: ierr
 
     call h5open_f(ierr)
-    call h5fopen_f(model_file, H5F_ACC_RDONLY_F, file_id, ierr)
+    call h5fopen_f(fname, H5F_ACC_RDONLY_F, file_id, ierr)
 
     if (ierr /= 0) then
-      if (parallel_IOProcessor()) print *,'Couldnt open model_file: ',model_file
-      call bl_error('Aborting now -- please supply model_file')
+      if (parallel_IOProcessor()) print *,'Could not open file: ',fname
+      call bl_error('Aborting now -- please supply filename')
     end if
 
     call h5gopen_f(file_id, '/mesh', group_id, ierr)
@@ -175,139 +179,137 @@ contains
     ! read array dimensions
     datasize1d(1) = 3
     call read_1d_slab('array_dimensions', array_dimensions, group_id, datasize1d)
-    nx_in = array_dimensions(1)
-    ny_in = array_dimensions(2)
-    nz_in = array_dimensions(3)
+    nx_chim = array_dimensions(1)
+    ny_chim = array_dimensions(2)
+    nz_chim = array_dimensions(3)
 
     ! read radial index bounds
     datasize1d(1) = 2
     call read_1d_slab('radial_index_bound', index_bounds, group_id, datasize1d)
-    imin_in = index_bounds(1)
-    imax_in = index_bounds(2)
+    imin_chim = index_bounds(1)
+    imax_chim = index_bounds(2)
 
     ! read theta index bounds
     call read_1d_slab('theta_index_bound', index_bounds, group_id, datasize1d)
-    jmin_in = index_bounds(1)
-    jmax_in = index_bounds(2)
-    if ( jmin_in /= 1 .or. jmax_in /= ny_in ) then
-       if (parallel_IOProcessor()) print *,'Error: inner theta bounds /= (1,ny_in), (',jmin_in,',',jmax_in,')'
+    jmin_chim = index_bounds(1)
+    jmax_chim = index_bounds(2)
+    if ( jmin_chim /= 1 .or. jmax_chim /= ny_chim ) then
+       if (parallel_IOProcessor()) print *,'Error: inner theta bounds /= (1,ny_chim), (',jmin_chim,',',jmax_chim,')'
        call bl_error('Aborting now -- check theta bounds in model file')
      end if
 
     ! read phi index bounds
     call read_1d_slab('phi_index_bound', index_bounds, group_id, datasize1d)
-    kmin_in = index_bounds(1)
-    kmax_in = index_bounds(2)
-    if ( kmin_in /= 1 .or. kmax_in /= nz_in ) then
-       if (parallel_IOProcessor()) print *,'Error: inner phi bounds /= (1,nz_in), (',kmin_in,',',kmax_in,')'
+    kmin_chim = index_bounds(1)
+    kmax_chim = index_bounds(2)
+    if ( kmin_chim /= 1 .or. kmax_chim /= nz_chim ) then
+       if (parallel_IOProcessor()) print *,'Error: inner phi bounds /= (1,nz_chim), (',kmin_chim,',',kmax_chim,')'
        call bl_error('Aborting now -- check phi bounds in model file')
      end if
 
     ! allocate grid variables
-    allocate (rad_edge_in(nx_in+1), drad_edge_in(nx_in+1), rad_cntr_in(nx_in), drad_cntr_in(nx_in))
-    allocate (theta_edge_in(-5:ny_in+7), dtheta_edge_in(-5:ny_in+7), theta_cntr_in(-5:ny_in+6), dtheta_cntr_in(-5:ny_in+6))
-    allocate (phi_edge_in(-5:nz_in+7), dphi_edge_in(-5:nz_in+7), phi_cntr_in(-5:nz_in+6), dphi_cntr_in(-5:nz_in+6))
+    allocate (x_e_chim(nx_chim+1))
+    allocate (y_e_chim(-5:ny_chim+7))
+    allocate (z_e_chim(-5:nz_chim+7))
+    allocate (x_c_chim(nx_chim))
+    allocate (y_c_chim(-5:ny_chim+6))
+    allocate (z_c_chim(-5:nz_chim+6))
+    allocate (dx_e_chim(nx_chim))
+    allocate (dy_e_chim(-5:ny_chim+6))
+    allocate (dz_e_chim(-5:nz_chim+6))
+    allocate (dx_c_chim(nx_chim))
+    allocate (dy_c_chim(-5:ny_chim+6))
+    allocate (dz_c_chim(-5:nz_chim+6))
 
     ! read zone edge coordinaets
-    datasize1d(1) = nx_in+1
-    call read_1d_slab('x_ef', rad_edge_in, group_id, datasize1d)
-    datasize1d(1) = ny_in+1
-    call read_1d_slab('y_ef', theta_edge_in(1:ny_in+1), group_id, datasize1d)
-    datasize1d(1) = nz_in+1
-    call read_1d_slab('z_ef', phi_edge_in(1:nz_in+1), group_id, datasize1d)
+    datasize1d(1) = nx_chim+1
+    call read_1d_slab('x_ef', x_e_chim, group_id, datasize1d)
+    datasize1d(1) = ny_chim+1
+    call read_1d_slab('y_ef', y_e_chim(1:ny_chim+1), group_id, datasize1d)
+    datasize1d(1) = nz_chim+1
+    call read_1d_slab('z_ef', z_e_chim(1:nz_chim+1), group_id, datasize1d)
 
     ! read zone center coordinates
-    datasize1d(1) = nx_in
-    call read_1d_slab('x_cf', rad_cntr_in, group_id, datasize1d)
-    datasize1d(1) = ny_in
-    call read_1d_slab('y_cf', theta_cntr_in(1:ny_in), group_id, datasize1d)
-    datasize1d(1) = nz_in
-    call read_1d_slab('z_cf', phi_cntr_in(1:nz_in), group_id, datasize1d)
+    datasize1d(1) = nx_chim
+    call read_1d_slab('x_cf', x_c_chim, group_id, datasize1d)
+    datasize1d(1) = ny_chim
+    call read_1d_slab('y_cf', y_c_chim(1:ny_chim), group_id, datasize1d)
+    datasize1d(1) = nz_chim
+    call read_1d_slab('z_cf', z_c_chim(1:nz_chim), group_id, datasize1d)
 
     ! read zone widths
-    datasize1d(1) = nx_in
-    call read_1d_slab('dx_cf', drad_cntr_in, group_id, datasize1d)
-    datasize1d(1) = ny_in
-    call read_1d_slab('dy_cf', dtheta_cntr_in(1:ny_in), group_id, datasize1d)
-    datasize1d(1) = nz_in
-    call read_1d_slab('dz_cf', dphi_cntr_in(1:nz_in), group_id, datasize1d)
-
-    drad_edge_in(1:nx_in) = rad_edge_in(2:nx_in+1) - rad_edge_in(1:nx_in)
-    drad_edge_in(nx_in+1) = drad_edge_in(nx_in)
+    datasize1d(1) = nx_chim
+    call read_1d_slab('dx_cf', dx_c_chim, group_id, datasize1d)
+    datasize1d(1) = ny_chim
+    call read_1d_slab('dy_cf', dy_c_chim(1:ny_chim), group_id, datasize1d)
+    datasize1d(1) = nz_chim
+    call read_1d_slab('dz_cf', dz_c_chim(1:nz_chim), group_id, datasize1d)
 
     ! fill grid boundaries
-    do i = 1, 6
-      dtheta_cntr_in(jmin_in - i) = dtheta_cntr_in(jmin_in + i - 1)
-      theta_edge_in(jmin_in - i) = theta_edge_in(jmin_in - i + 1) - dtheta_cntr_in(jmin_in - i)
-      theta_cntr_in(jmin_in - i) = theta_edge_in(jmin_in - i) + half * dtheta_cntr_in(jmin_in - i)
-
-      dphi_cntr_in(kmin_in - i) = dphi_cntr_in(kmax_in + 1 - i)
-      phi_edge_in(kmin_in - i) = phi_edge_in(kmin_in - i + 1) - dphi_cntr_in(kmin_in - i)
-      phi_cntr_in(kmin_in - i) = phi_edge_in(kmin_in - i) + half * dphi_cntr_in(kmin_in - i)
-    end do
-
-    do i = 1, 6
-      dtheta_cntr_in(jmax_in + i) = dtheta_cntr_in(jmax_in + 1 - i)
-      theta_edge_in(jmax_in + i + 1) = theta_edge_in(jmax_in + i) + dtheta_cntr_in(jmax_in + i)
-      theta_cntr_in(jmax_in + i) = theta_edge_in(jmax_in + i) + half * dtheta_cntr_in(jmax_in + i)
-
-      dphi_cntr_in(kmax_in + i) = dphi_cntr_in(kmin_in + i - 1)
-      phi_edge_in(kmax_in + i + 1) = phi_edge_in(kmax_in + i) + dphi_cntr_in(kmax_in + i)
-      phi_cntr_in(kmax_in + i) = phi_edge_in(kmax_in + i) + half * dphi_cntr_in(kmax_in + i)
-    end do
-    dtheta_edge_in(-5:ny_in+6) = theta_edge_in(-4:ny_in+7) - theta_edge_in(-5:ny_in+6)
-    dtheta_edge_in(ny_in+7) = dtheta_edge_in(ny_in+6)
-    dphi_edge_in(-5:nz_in+6) = phi_edge_in(-4:nz_in+7) - phi_edge_in(-5:nz_in+6)
-    dphi_edge_in(nz_in+7) = dphi_edge_in(nz_in+6)
+    call grid_bc(y_e_chim, y_c_chim, dy_c_chim, 1, ny_chim, 0, 0)
+    call grid_bc(z_e_chim, z_c_chim, dz_c_chim, 1, nz_chim, 3, 3)
+    dx_e_chim(1:nx_chim) = x_e_chim(2:nx_chim+1) - x_e_chim(1:nx_chim)
+    dy_e_chim(-5:ny_chim+6) = y_e_chim(-4:ny_chim+7) - y_e_chim(-5:ny_chim+6)
+    dz_e_chim(-5:nz_chim+6) = z_e_chim(-4:nz_chim+7) - z_e_chim(-5:nz_chim+6)
 
     ! read times
     datasize1d(1) = 1
     call read_1d_slab('time', d_read, group_id, datasize1d)
-    time_in = d_read(1)
+    time_chim = d_read(1)
     call read_1d_slab('t_bounce', d_read, group_id, datasize1d)
     t_bounce = d_read(1)
 
     ! solid angles and volumes
-    allocate (domega_in(ny_in,nz_in))
-    allocate (volume_in(nx_in,ny_in,nz_in))
-    allocate (vol_rad_edge_in(nx_in+1))
-    allocate (vol_theta_edge_in(ny_in+1))
-    allocate (vol_phi_edge_in(nz_in+1))
-    allocate (vol_rad_cntr_in(nx_in))
-    allocate (vol_theta_cntr_in(ny_in))
-    allocate (vol_phi_cntr_in(nz_in))
-    allocate (dvol_rad_in(nx_in))
-    allocate (dvol_theta_in(ny_in))
-    allocate (dvol_phi_in(nz_in))
+    allocate (volx_e_chim(nx_chim+1))
+    allocate (voly_e_chim(ny_chim+1))
+    allocate (volz_e_chim(nz_chim+1))
+    allocate (volx_c_chim(nx_chim))
+    allocate (voly_c_chim(ny_chim))
+    allocate (volz_c_chim(nz_chim))
+    allocate (dvolx_e_chim(nx_chim))
+    allocate (dvoly_e_chim(ny_chim))
+    allocate (dvolz_e_chim(nz_chim))
+    allocate (dvolx_c_chim(nx_chim))
+    allocate (dvoly_c_chim(ny_chim))
+    allocate (dvolz_c_chim(nz_chim))
+    allocate (domega_chim(ny_chim,nz_chim))
+    allocate (dvol_e_chim(nx_chim,ny_chim,nz_chim))
+    allocate (dmass_e_chim(nx_chim,ny_chim,nz_chim))
 
-    datasize2d = (/ ny_in, nz_in /)
-    call read_2d_slab('d_omega',domega_in, group_id, datasize2d)
+    datasize2d = (/ ny_chim, nz_chim /)
+    call read_2d_slab('d_omega', domega_chim, group_id, datasize2d)
 
-    vol_rad_edge_in(1)     = third * rad_edge_in(1)**3
-    do i = 1, nx_in
-      dx                   = drad_edge_in(i)
-      dvol_rad_in(i)       = dx * ( rad_edge_in(i) * rad_edge_in(i+1) + dx * dx * third )
-      vol_rad_edge_in(i+1) = vol_rad_edge_in(i) + dvol_rad_in(i)
+    volx_e_chim(1) = third * x_e_chim(1)**3
+    do i = 1, nx_chim
+      dx               = dx_e_chim(i)
+      dvolx_e_chim(i)  = dx * ( x_e_chim(i) * x_e_chim(i+1) + dx * dx * third )
+      volx_e_chim(i+1) = volx_e_chim(i) + dvolx_e_chim(i)
     end do
-    vol_rad_cntr_in(1:nx_in) = vol_rad_edge_in(1:nx_in) + half*dvol_rad_in(1:nx_in)
+    volx_c_chim(1:nx_chim) = volx_e_chim(1:nx_chim) + half*dvolx_e_chim(1:nx_chim)
+    dvolx_c_chim(1:nx_chim-1) = volx_c_chim(2:nx_chim) - volx_c_chim(1:nx_chim-1)
+    dvolx_c_chim(nx_chim) = dvolx_c_chim(nx_chim-1)
 
-    vol_theta_edge_in(1) = one - cos( theta_edge_in(1) )
-    do j = 1, ny_in
-      dvol_theta_in(j)       = cos( theta_edge_in(j) ) - cos( theta_edge_in(j+1) )
-      vol_theta_edge_in(j+1) = vol_theta_edge_in(j) + dvol_theta_in(j)
+    voly_e_chim(1) = one - cos( y_e_chim(1) )
+    do j = 1, ny_chim
+      dvoly_e_chim(j)  = cos( y_e_chim(j) ) - cos( y_e_chim(j+1) )
+      voly_e_chim(j+1) = voly_e_chim(j) + dvoly_e_chim(j)
     end do
-    vol_theta_cntr_in(1:ny_in) = vol_theta_edge_in(1:ny_in) + half*dvol_theta_in(1:ny_in)
+    voly_c_chim(1:ny_chim) = voly_e_chim(1:ny_chim) + half*dvoly_e_chim(1:ny_chim)
+    dvoly_c_chim(1:ny_chim-1) = voly_c_chim(2:ny_chim) - voly_c_chim(1:ny_chim-1)
+    dvoly_c_chim(ny_chim) = dvoly_c_chim(ny_chim-1)
 
-    vol_phi_edge_in(1) = phi_edge_in(1)
-    do k = 1, nz_in
-      dvol_phi_in(k)       = dphi_edge_in(k)
-      vol_phi_edge_in(k+1) = vol_phi_edge_in(k) + dvol_phi_in(k)
+    volz_e_chim(1) = z_e_chim(1)
+    do k = 1, nz_chim
+      dvolz_e_chim(k)  = dz_e_chim(k)
+      volz_e_chim(k+1) = volz_e_chim(k) + dvolz_e_chim(k)
     end do
-    vol_phi_cntr_in(1:nz_in) = vol_phi_edge_in(1:nz_in) + half*dvol_phi_in(1:nz_in)
+    volz_c_chim(1:nz_chim) = volz_e_chim(1:nz_chim) + half*dvolz_e_chim(1:nz_chim)
+    dvolz_c_chim(1:nz_chim-1) = volz_c_chim(2:nz_chim) - volz_c_chim(1:nz_chim-1)
+    dvolz_c_chim(nz_chim) = dvolz_c_chim(nz_chim-1)
 
-    omega_in = sum( domega_in(:,:) )
-    do i = 1, nx_in
-      volume_in(i,:,:) = dvol_rad_in(i) * domega_in(:,:)
+    omega_chim = sum( domega_chim(:,:) )
+    do i = 1, nx_chim
+      dvol_e_chim(i,:,:) = dvolx_e_chim(i) * domega_chim(:,:)
     end do
 
     ! close mesh group
@@ -318,52 +320,54 @@ contains
     if (ierr /= 0) call bl_error('Could not open /fluid group')
 
     ! allocate fluid variables
-    allocate (vrad_in(nx_in,ny_in,nz_in))
-    allocate (vtheta_in(nx_in,ny_in,nz_in))
-    allocate (vphi_in(nx_in,ny_in,nz_in))
-    allocate (dens_in(nx_in,ny_in,nz_in))
-    allocate (temp_in(nx_in,ny_in,nz_in))
-    allocate (ye_in(nx_in,ny_in,nz_in))
-    allocate (pres_in(nx_in,ny_in,nz_in))
-    allocate (eint_in(nx_in,ny_in,nz_in))
-    allocate (ebind_in(nx_in,ny_in,nz_in))
-    allocate (enpy_in(nx_in,ny_in,nz_in))
-    allocate (grad_in(nx_in,ny_in,nz_in))
-    allocate (gtheta_in(nx_in,ny_in,nz_in))
-    allocate (gphi_in(nx_in,ny_in,nz_in))
+    allocate (u_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (v_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (w_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (rho_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (t_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (ye_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (p_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (ei_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (eb_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (s_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (gravx_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (gravy_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (gravz_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (gravx_c_avg_chim(nx_chim))
 
     ! read velocity variables
-    datasize3d = (/ nx_in, ny_in, nz_in /)
+    datasize3d = (/ nx_chim, ny_chim, nz_chim /)
     slab_offset3d = (/ 0, 0, 0 /)
-    call read_ray_hyperslab('u_c',     vrad_in,   group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('v_c',     vtheta_in, group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('w_c',     vphi_in,   group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('u_c',     u_c_chim, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('v_c',     v_c_chim, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('w_c',     w_c_chim, group_id, datasize3d, slab_offset3d)
 
     ! read thermo variables
-    call read_ray_hyperslab('rho_c',   dens_in,   group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('t_c',     temp_in,   group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('ye_c',    ye_in,     group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('press',   pres_in,   group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('e_int',   eint_in,   group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('entropy', enpy_in,   group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('rho_c',   rho_c_chim, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('t_c',     t_c_chim,   group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('ye_c',    ye_c_chim,  group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('press',   p_c_chim,   group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('e_int',   ei_c_chim,  group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('entropy', s_c_chim,   group_id, datasize3d, slab_offset3d)
 
-    allocate (zone_mass_in(nx_in,ny_in,nz_in))
-    zone_mass_in(:,:,:) = dens_in(:,:,:) * volume_in(:,:,:)
+    dmass_e_chim(:,:,:) = rho_c_chim(:,:,:) * dvol_e_chim(:,:,:)
 
     ! read gravity variables
-    call read_ray_hyperslab('grav_x_c', grad_in,   group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('grav_y_c', gtheta_in, group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('grav_z_c', gphi_in,   group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('grav_x_c', gravx_c_chim, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('grav_y_c', gravy_c_chim, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('grav_z_c', gravz_c_chim, group_id, datasize3d, slab_offset3d)
+    do i = imax_chim+1, nx_chim
+      gravx_c_chim(i,:,:) = gravx_c_chim(imax_chim,:,:) * (volx_c_chim(imax_chim)/volx_c_chim(i))**two3rd
+    end do
 
-    allocate (grad_avg_in(nx_in))
-    do i = 1, nx_in
-      grad_avg_in(i) = SUM( grad_in(i,:,:) * domega_in(:,:) ) / omega_in
+    do i = 1, nx_chim
+      gravx_c_avg_chim(i) = sum( gravx_c_chim(i,:,:) * domega_chim(:,:) ) / omega_chim
     end do
 
     ! read number of nuclei
     datasize1d(1) = 2
     call read_1d_slab('dimeos', eos_dimensions, group_id, datasize1d)
-    nnc_in = eos_dimensions(1)
+    nnc_chim = eos_dimensions(1)
 
     ! close fluid group
     call h5gclose_f(group_id, ierr)
@@ -373,51 +377,51 @@ contains
     if (ierr /= 0) call bl_error('Could not open /abundance group')
 
     ! allocate composition variables
-    allocate (a_nuc_in(nnc_in-1))
-    allocate (z_nuc_in(nnc_in-1))
-    allocate (m_ex_nuc_in(nnc_in-1))
-    allocate (be_nuc_in(nnc_in-1))
-    allocate (nuc_name_in(nnc_in))
-    allocate (xn_read(nnc_in,nx_in,ny_in,nz_in))
-    allocate (xn_in(nspec,nx_in,ny_in,nz_in))
-    allocate (nse_in(nx_in+1,ny_in,nz_in))
-    allocate (a_nuc_rep_in(nx_in,ny_in,nz_in))
-    allocate (z_nuc_rep_in(nx_in,ny_in,nz_in))
-    allocate (be_nuc_rep_in(nx_in,ny_in,nz_in))
+    allocate (a_nuc_chim(nnc_chim-1))
+    allocate (z_nuc_chim(nnc_chim-1))
+    allocate (mex_nuc_chim(nnc_chim-1))
+    allocate (be_nuc_chim(nnc_chim-1))
+    allocate (name_nuc_chim(nnc_chim))
+    allocate (xn_read(nnc_chim,nx_chim,ny_chim,nz_chim))
+    allocate (xn_c_chim(nspec,nx_chim,ny_chim,nz_chim))
+    allocate (nse_c_chim(nx_chim+1,ny_chim,nz_chim))
+    allocate (a_aux_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (z_aux_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (be_aux_c_chim(nx_chim,ny_chim,nz_chim))
 
     ! read nuclei values
-    datasize1d(1) = nnc_in-1
-    call read_1d_slab('a_nuc',    a_nuc_in,    group_id, datasize1d)
-    call read_1d_slab('z_nuc',    z_nuc_in,    group_id, datasize1d)
-    call read_1d_slab('m_ex_nuc', m_ex_nuc_in, group_id, datasize1d)
+    datasize1d(1) = nnc_chim-1
+    call read_1d_slab('a_nuc',    a_nuc_chim,   group_id, datasize1d)
+    call read_1d_slab('z_nuc',    z_nuc_chim,   group_id, datasize1d)
+    call read_1d_slab('m_ex_nuc', mex_nuc_chim, group_id, datasize1d)
 
     ! binding energy
-    be_nuc_in(1:nnc_in-1) = z_nuc_in(1:nnc_in-1)*7.2889705d+00 + &
-    &                       (a_nuc_in(1:nnc_in-1)-z_nuc_in(1:nnc_in-1))*8.0713171d+00 - &
-    &                       m_ex_nuc_in(1:nnc_in-1)
+    be_nuc_chim(1:nnc_chim-1) = z_nuc_chim(1:nnc_chim-1)*7.2889705_dp_t + &
+    &                           (a_nuc_chim(1:nnc_chim-1)-z_nuc_chim(1:nnc_chim-1))*8.0713171_dp_t - &
+    &                           mex_nuc_chim(1:nnc_chim-1)
     
     ! read nuclei names
-    datasize1d(1) = nnc_in
-    call read_1d_slab('a_name',   nuc_name_in, 5, group_id, datasize1d)
+    datasize1d(1) = nnc_chim
+    call read_1d_slab('a_name', name_nuc_chim, 5, group_id, datasize1d)
 
     ! read mass fractions
-    datasize4d = (/ nnc_in, nx_in, ny_in, nz_in /)
+    datasize4d = (/ nnc_chim, nx_chim, ny_chim, nz_chim /)
     slab_offset4d = (/ 0, 0, 0, 0 /)
     call read_ray_hyperslab('xn_c', xn_read, group_id, datasize4d, slab_offset4d)
 
     ! create lookup tables for isotopes in castro net
     k = 0
-    net_to_castro(:) = nnc_in
+    net_to_castro(:) = nnc_chim
     do i = 1, nspec
-      do j = 1, nnc_in-1
-        if ( nint(aion(i)) == nint(a_nuc_in(j)) .and. nint(zion(i)) == nint(z_nuc_in(j)) ) then
+      do j = 1, nnc_chim-1
+        if ( nint(aion(i)) == nint(a_nuc_chim(j)) .and. nint(zion(i)) == nint(z_nuc_chim(j)) ) then
           k = k + 1
           net_to_castro(i) = j
           itmp(k) = i
           exit
         end if
       end do
-      if ( j > nnc_in-1 ) then
+      if ( j > nnc_chim-1 ) then
         if (parallel_IOProcessor()) then
           write(*,'(2(a,i3),a)') ' could not find isotope (',nint(zion(i)),',',nint(aion(i)),') in CHIMERA net'
         end if
@@ -428,35 +432,37 @@ contains
       allocate (net_in_castro(k))
       net_in_castro(:) = itmp(1:k)
     else
-      call bl_error("no species in CHIMERA net in CASTRO net")
+      call bl_error("no species in chimera net in castro net")
     end if
 
-    xn_in(net_in_castro,:,:,:) = xn_read(net_to_castro(net_in_castro),:,:,:)
-!   xn_in(nspec,:,:,:) = xn_read(nnc_in,:,:,:)
+    xn_c_chim(net_in_castro,:,:,:) = xn_read(net_to_castro(net_in_castro),:,:,:)
+    if ( nspec > nspec_evolve ) then
+      xn_c_chim(nspec,:,:,:) = xn_read(nnc_chim,:,:,:)
+    end if
 
     ! read nse state
-    datasize3d = (/ nx_in+1, ny_in, nz_in /)
+    datasize3d = (/ nx_chim+1, ny_chim, nz_chim /)
     slab_offset3d = (/ 0, 0, 0 /)
-    call read_ray_hyperslab('nse_c', nse_in, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('nse_c', nse_c_chim, group_id, datasize3d, slab_offset3d)
 
     ! read representative heavy nucleus/auxiliary nucleus properties
-    datasize3d = (/ nx_in, ny_in, nz_in /)
+    datasize3d = (/ nx_chim, ny_chim, nz_chim /)
     slab_offset3d = (/ 0, 0, 0 /)
-    call read_ray_hyperslab('a_nuc_rep_c',  a_nuc_rep_in,  group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('z_nuc_rep_c',  z_nuc_rep_in,  group_id, datasize3d, slab_offset3d)
-    call read_ray_hyperslab('be_nuc_rep_c', be_nuc_rep_in, group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('a_nuc_rep_c',  a_aux_c_chim,  group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('z_nuc_rep_c',  z_aux_c_chim,  group_id, datasize3d, slab_offset3d)
+    call read_ray_hyperslab('be_nuc_rep_c', be_aux_c_chim, group_id, datasize3d, slab_offset3d)
 
     ! binding energy
-    ebind_in(:,:,:) = 0.0d0
-    do i = 1, nnc_in-1
-      ebind_in(:,:,:) = ebind_in(:,:,:) - xn_read(i,:,:,:)*be_nuc_in(i)/a_nuc_in(i)
+    eb_c_chim(:,:,:) = zero
+    do i = 1, nnc_chim-1
+      eb_c_chim(:,:,:) = eb_c_chim(:,:,:) - xn_read(i,:,:,:)*be_nuc_chim(i)/a_nuc_chim(i)
     end do
-    ebind_in(:,:,:) = ebind_in(:,:,:) - xn_read(nnc_in,:,:,:)*be_nuc_rep_in(:,:,:)/a_nuc_rep_in(:,:,:)
+    eb_c_chim(:,:,:) = eb_c_chim(:,:,:) - xn_read(nnc_chim,:,:,:)*be_aux_c_chim(:,:,:)/a_aux_c_chim(:,:,:)
     ! convert from MeV/c^2 to erg/g
-    ebind_in(:,:,:) = ebind_in(:,:,:) * MeV2eV * ev2erg * n_A
+    eb_c_chim(:,:,:) = eb_c_chim(:,:,:) * MeV2eV * ev2erg * n_A
 
     ! remove b.e. and constant offset from internal energy
-    eint_in(:,:,:) = eint_in(:,:,:) - ebind_in(:,:,:) - 8.9d0 * MeV2eV * ev2erg * n_A
+    ei_c_chim(:,:,:) = ei_c_chim(:,:,:) - eb_c_chim(:,:,:) - 8.9_dp_t * MeV2eV * ev2erg * n_A
 
     ! close abundance group
     call h5gclose_f(group_id, ierr)
@@ -470,19 +476,19 @@ contains
         ! read particle dimensions
         datasize1d(1) = 2
         call read_1d_slab('partdim', part_dimensions, group_id, datasize1d)
-        npart_in = part_dimensions(1)
-        npart_shell_in = part_dimensions(2)
+        npart_chim = part_dimensions(1)
+        npart_shell_chim = part_dimensions(2)
 
         ! allocate particle variables
-        allocate (prad_in(npart_in))
-        allocate (ptheta_in(npart_in))
-        allocate (pphi_in(npart_in))
+        allocate (px_chim(npart_chim))
+        allocate (py_chim(npart_chim))
+        allocate (pz_chim(npart_chim))
 
         ! read particle variables
-        datasize1d(1) = npart_in
-        call read_1d_slab('px', prad_in, group_id, datasize1d)
-        call read_1d_slab('py', ptheta_in, group_id, datasize1d)
-        call read_1d_slab('pz', pphi_in, group_id, datasize1d)
+        datasize1d(1) = npart_chim
+        call read_1d_slab('px', px_chim, group_id, datasize1d)
+        call read_1d_slab('py', py_chim, group_id, datasize1d)
+        call read_1d_slab('pz', pz_chim, group_id, datasize1d)
 
         ! close particle group
         call h5gclose_f(group_id, ierr)
@@ -493,7 +499,7 @@ contains
     call h5fclose_f(file_id, ierr)
     call h5close_f(ierr)
 
-    model_initialized = .true.
+    chimera_initialized = .true.
 
     return
 
@@ -501,105 +507,191 @@ contains
 
 
   subroutine close_chimera_file
+
+    use probdata_module
     
-    if (model_initialized) then
-       deallocate(rad_edge_in)
-       deallocate(rad_cntr_in)
-       deallocate(drad_cntr_in)
-       deallocate(theta_edge_in)
-       deallocate(theta_cntr_in)
-       deallocate(dtheta_cntr_in)
-       deallocate(phi_edge_in)
-       deallocate(phi_cntr_in)
-       deallocate(dphi_cntr_in)
-       deallocate(vol_rad_cntr_in)
-       deallocate(vol_theta_cntr_in)
-       deallocate(vol_phi_cntr_in)
-       deallocate(vol_rad_edge_in)
-       deallocate(vol_theta_edge_in)
-       deallocate(vol_phi_edge_in)
-       deallocate(dvol_rad_in)
-       deallocate(dvol_theta_in)
-       deallocate(dvol_phi_in)
-       deallocate(domega_in)
-       deallocate(volume_in)
-       deallocate(zone_mass_in)
-       deallocate(vrad_in)
-       deallocate(vtheta_in)
-       deallocate(vphi_in)
-       deallocate(dens_in)
-       deallocate(temp_in)
-       deallocate(ye_in)
-       deallocate(pres_in)
-       deallocate(eint_in)
-       deallocate(ebind_in)
-       deallocate(enpy_in)
-       deallocate(grad_in)
-       deallocate(gtheta_in)
-       deallocate(gphi_in)
-       deallocate(grad_avg_in)
-       deallocate(a_nuc_in)
-       deallocate(z_nuc_in)
-       deallocate(m_ex_nuc_in)
-       deallocate(be_nuc_in)
-       deallocate(nuc_name_in)
+    if (chimera_initialized) then
+       deallocate(x_e_chim)
+       deallocate(y_e_chim)
+       deallocate(z_e_chim)
+       deallocate(x_c_chim)
+       deallocate(y_c_chim)
+       deallocate(z_c_chim)
+       deallocate(dx_e_chim)
+       deallocate(dy_e_chim)
+       deallocate(dz_e_chim)
+       deallocate(dx_c_chim)
+       deallocate(dy_c_chim)
+       deallocate(dz_c_chim)
+       deallocate(volx_e_chim)
+       deallocate(voly_e_chim)
+       deallocate(volz_e_chim)
+       deallocate(volx_c_chim)
+       deallocate(voly_c_chim)
+       deallocate(volz_c_chim)
+       deallocate(dvolx_e_chim)
+       deallocate(dvoly_e_chim)
+       deallocate(dvolz_e_chim)
+       deallocate(dvolx_c_chim)
+       deallocate(dvoly_c_chim)
+       deallocate(dvolz_c_chim)
+       deallocate(domega_chim)
+       deallocate(dvol_e_chim)
+       deallocate(dmass_e_chim)
+       deallocate(u_c_chim)
+       deallocate(v_c_chim)
+       deallocate(w_c_chim)
+       deallocate(rho_c_chim)
+       deallocate(t_c_chim)
+       deallocate(ye_c_chim)
+       deallocate(p_c_chim)
+       deallocate(ei_c_chim)
+       deallocate(eb_c_chim)
+       deallocate(s_c_chim)
+       deallocate(gravx_c_chim)
+       deallocate(gravy_c_chim)
+       deallocate(gravz_c_chim)
+       deallocate(gravx_c_avg_chim)
+       deallocate(a_nuc_chim)
+       deallocate(z_nuc_chim)
+       deallocate(mex_nuc_chim)
+       deallocate(be_nuc_chim)
+       deallocate(name_nuc_chim)
        deallocate(xn_read)
-       deallocate(xn_in)
-       deallocate(nse_in)
-       deallocate(a_nuc_rep_in)
-       deallocate(z_nuc_rep_in)
-       deallocate(be_nuc_rep_in)
-       deallocate(prad_in)
-       deallocate(ptheta_in)
-       deallocate(pphi_in)
-       model_initialized = .false.
+       deallocate(xn_c_chim)
+       deallocate(nse_c_chim)
+       deallocate(a_aux_c_chim)
+       deallocate(z_aux_c_chim)
+       deallocate(be_aux_c_chim)
+       if ( do_particles ) then
+         deallocate(px_chim)
+         deallocate(py_chim)
+         deallocate(pz_chim)
+       end if
+       chimera_initialized = .false.
     endif
 
     return
 
   end subroutine close_chimera_file
 
-  subroutine interp1d_chimera( rad_out, state_in, state_out, interp_method )
+  subroutine grid_bc( xag, xcg, dxg, nmin, nmax, nleft, nright )
 
     use bl_constants_module
     use bl_error_module
-    use model_interp_module, only: interp1d_linear, interp1d_spline
-    use interpolate_module, only: locate
+
+    !  boundary condition flags : nleft, nright
+    !    = 0 : reflecting
+    !    = 3 : periodic (eg, u(nmin-1) = u(nmax))
 
     ! input variables
-    real (dp_t), intent(in) :: rad_out(:)
-    real (dp_t), intent(in) :: state_in(:)
-    integer, intent(in) :: interp_method
+    integer, intent(in) :: nmin         ! minimum coordinate index
+    integer, intent(in) :: nmax         ! maximum coordinate index
+    integer, intent(in) :: nleft        ! left boundary type
+    integer, intent(in) :: nright       ! right boundary type
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(rad_out))
+    real (dp_t), intent(inout) :: xag(nmin-6:nmax+7)    ! grid edges
+    real (dp_t), intent(inout) :: xcg(nmin-6:nmax+6)    ! grid centers
+    real (dp_t), intent(inout) :: dxg(nmin-6:nmax+6)    ! grid widths
 
     ! local variables
-    integer :: irad(size(rad_out))
-    integer :: irad_max
+    integer :: n        ! zone index
+
+    ! left (inner) boundary
+    select case (nleft)
+
+    case (0,162)        ! grid symmetric with left (inner) edge
+
+      do n = 1, 6
+        dxg(nmin - n)  = dxg(nmin + n - 1)
+        xag(nmin - n)  = xag(nmin - n + 1) - dxg(nmin-n)
+        xcg(nmin - n)  = xag(nmin - n) + half * dxg(nmin - n)
+      end do
+
+    case (3)            ! periodic
+
+      do n = 1, 6
+        dxg(nmin - n)  = dxg(nmax + 1 - n)
+        xag(nmin - n)  = xag(nmin - n + 1) - dxg(nmin - n)
+        xcg(nmin - n)  = xag(nmin - n) + half * dxg(nmin - n)
+      end do
+
+    case default
+
+      call bl_error("invalid value for boundary condition, nleft")
+
+    end select
+
+    ! right (outer) boundary
+    select case (nright)
+
+    case (0,162)        ! grid symmetric with right (outer) edge
+
+      do n = 1, 6
+        dxg(nmax + n)     = dxg(nmax + 1 - n)
+        xag(nmax + n + 1) = xag(nmax + n) + dxg(nmax + n)
+        xcg(nmax + n)     = xag(nmax + n) + half * dxg(nmax + n)
+      end do ! n = 1, 6
+
+    case (3)            ! grid symetric with left (inner) edge
+
+      do n = 1, 6
+        dxg(nmax + n)     = dxg(nmin + n - 1)
+        xag(nmax + n + 1) = xag(nmax + n) + dxg(nmax + n)
+        xcg(nmax + n)     = xag(nmax + n) + half * dxg(nmax + n)
+      end do ! n = 1, 6
+
+    case default
+
+      call bl_error("invalid value for boundary condition, nright")
+
+    end select
+
+    return
+  end subroutine grid_bc
+
+  subroutine interp1d_chimera( x_out, state_chim, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp1d_linear, interp1d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (dp_t), intent(in) :: x_out(:)
+    real (dp_t), intent(in) :: state_chim(:)
+
+    ! output variables
+    real (dp_t), intent(out) :: state_out(size(x_out))
+
+    ! local variables
+    integer :: ix(size(x_out))
+    integer :: ix_max
 
     real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: vol_rad_out(size(rad_out))
+    real (dp_t) :: volx_out(size(x_out))
 
     integer :: i, n
 
-    vol_rad_out = third * rad_out**3
+    volx_out = third * x_out**3
+    ix_max = imax_chim
 
     if ( interp_method == 1 ) then
-      irad_max = imax_in
-      irad(:) = 0
-      do i = 1, size(rad_out)
-        if ( vol_rad_out(i) <= vol_rad_cntr_in(1) ) then
-          irad(i) = 0
-        else if ( vol_rad_out(i) >= vol_rad_cntr_in(irad_max) ) then
-          irad(i) = irad_max
+      ix(:) = 0
+      do i = 1, size(x_out)
+        if ( volx_out(i) <= volx_c_chim(1) ) then
+          ix(i) = 0
+        else if ( volx_out(i) >= volx_c_chim(ix_max) ) then
+          ix(i) = ix_max
         else
-          irad(i) = locate( vol_rad_out(i), irad_max, vol_rad_cntr_in ) - 1
+          ix(i) = locate( volx_out(i), ix_max, volx_c_chim ) - 1
         end if
       end do
-      call interp1d_linear( irad, irad_max, vol_rad_cntr_in, state_in, vol_rad_out, state_out )
+      call interp1d_linear( ix, ix_max, volx_c_chim, state_chim, volx_out, state_out )
     else if ( interp_method == 2 ) then
-      call interp1d_spline( vol_rad_cntr_in, state_in, vol_rad_out, state_out )
+      call interp1d_spline( volx_c_chim, state_chim, volx_out, state_out )
     else
       call bl_error("invalid value for interp_method")
     end if
@@ -607,70 +699,70 @@ contains
     return
   end subroutine interp1d_chimera
 
-  subroutine interp2d_chimera( rad_out, theta_out, state_in, state_out, interp_method )
+  subroutine interp2d_chimera( x_out, y_out, state_chim, state_out )
 
     use bl_constants_module
     use bl_error_module
-    use model_interp_module, only: interp2d_linear, interp2d_spline
     use interpolate_module, only: locate
+    use model_interp_module, only: interp2d_linear, interp2d_spline
+    use probdata_module, only: interp_method
 
     ! input variables
-    real (dp_t), intent(in) :: rad_out(:,:)
-    real (dp_t), intent(in) :: theta_out(:,:)
-    real (dp_t), intent(in) :: state_in(:,:)
-    integer, intent(in) :: interp_method
+    real (dp_t), intent(in) :: x_out(:,:)
+    real (dp_t), intent(in) :: y_out(:,:)
+    real (dp_t), intent(in) :: state_chim(:,:)
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(rad_out,1),size(rad_out,2))
+    real (dp_t), intent(out) :: state_out(size(x_out,1),size(x_out,2))
 
     ! local variables
-    integer :: irad(size(rad_out,1),size(rad_out,2))
-    integer :: irad_max
+    integer :: ix(size(x_out,1),size(x_out,2))
+    integer :: ix_max
 
-    integer :: itheta(size(rad_out,1),size(rad_out,2))
-    integer :: itheta_max
+    integer :: iy(size(x_out,1),size(x_out,2))
+    integer :: iy_max
 
-    real (dp_t) :: vol_rad_out(size(rad_out,1),size(rad_out,2))
-    real (dp_t) :: vol_theta_out(size(rad_out,1),size(rad_out,2))
+    real (dp_t) :: volx_out(size(x_out,1),size(x_out,2))
+    real (dp_t) :: voly_out(size(x_out,1),size(x_out,2))
 
     real (dp_t) :: dvol1, dvol2
 
     integer :: i, j, n
 
-    vol_rad_out   = third * rad_out**3
-    vol_theta_out = one - cos( theta_out )
-    irad_max = imax_in
-    itheta_max = jmax_in
+    volx_out   = third * x_out**3
+    voly_out = one - cos( y_out )
+    ix_max = imax_chim
+    iy_max = jmax_chim
 
     if ( interp_method == 1 ) then
 
-      irad(:,:) = 0
-      itheta(:,:) = 0
-      do j = 1, size(rad_out,2)
-        do i = 1, size(rad_out,1)
-          if ( vol_rad_out(i,j) <= vol_rad_cntr_in(1) ) then
-            irad(i,j) = 0
-          else if ( vol_rad_out(i,j) >= vol_rad_cntr_in(irad_max) ) then
-            irad(i,j) = irad_max
+      ix(:,:) = 0
+      iy(:,:) = 0
+      do j = 1, size(x_out,2)
+        do i = 1, size(x_out,1)
+          if ( volx_out(i,j) <= volx_c_chim(1) ) then
+            ix(i,j) = 0
+          else if ( volx_out(i,j) >= volx_c_chim(ix_max) ) then
+            ix(i,j) = ix_max
           else
-            irad(i,j) = locate( vol_rad_out(i,j), irad_max, vol_rad_cntr_in ) - 1
+            ix(i,j) = locate( volx_out(i,j), ix_max, volx_c_chim ) - 1
           end if
-          if ( vol_theta_out(i,j) <= vol_theta_cntr_in(1) ) then
-            itheta(i,j) = 0
-          else if ( vol_theta_out(i,j) >= vol_theta_cntr_in(itheta_max) ) then
-            itheta(i,j) = itheta_max
+          if ( voly_out(i,j) <= voly_c_chim(1) ) then
+            iy(i,j) = 0
+          else if ( voly_out(i,j) >= voly_c_chim(iy_max) ) then
+            iy(i,j) = iy_max
           else
-            itheta(i,j) = locate( vol_theta_out(i,j), itheta_max, vol_theta_cntr_in ) - 1
+            iy(i,j) = locate( voly_out(i,j), iy_max, voly_c_chim ) - 1
           end if
         end do
       end do
 
-      call interp2d_linear( irad, irad_max, itheta, itheta_max, vol_rad_cntr_in, vol_theta_cntr_in, state_in, &
-      &                     vol_rad_out, vol_theta_out, state_out )
+      call interp2d_linear( ix, ix_max, iy, iy_max, volx_c_chim, voly_c_chim, state_chim, &
+      &                     volx_out, voly_out, state_out )
 
     else if ( interp_method == 2 ) then
-      call interp2d_spline( vol_rad_cntr_in(1:irad_max), vol_theta_cntr_in(1:itheta_max), state_in(1:irad_max,1:itheta_max), &
-      &                     vol_rad_out, vol_theta_out, state_out )
+      call interp2d_spline( volx_c_chim(1:ix_max), voly_c_chim(1:iy_max), state_chim(1:ix_max,1:iy_max), &
+      &                     volx_out, voly_out, state_out )
     else
       call bl_error("invalid value for interp_method")
     end if
@@ -678,97 +770,88 @@ contains
     return
   end subroutine interp2d_chimera
 
-  subroutine interp2d_quad_chimera( rad_out, theta_out, state_in, state_out, interp_method )
+  subroutine interp2d_quad_chimera( x_out, y_out, state_chim, state_out )
 
     use bl_constants_module
     use bl_error_module
     use model_interp_module, only: interp2d_linear, interp2d_spline
     use interpolate_module, only: locate
+    use probdata_module, only: interp_method, nquad
+    use quadrature_module, only: wquad, quad_avg
 
     ! input variables
-    real (dp_t), intent(in) :: rad_out(:,:,:,:)
-    real (dp_t), intent(in) :: theta_out(:,:,:,:)
-    real (dp_t), intent(in) :: state_in(:,:)
-    integer, intent(in) :: interp_method
+    real (dp_t), intent(in) :: x_out(:,:,:,:)
+    real (dp_t), intent(in) :: y_out(:,:,:,:)
+    real (dp_t), intent(in) :: state_chim(:,:)
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(rad_out,3),size(rad_out,4))
+    real (dp_t), intent(out) :: state_out(size(x_out,3),size(x_out,4))
 
     ! local variables
-    integer :: irad(size(xquad),size(xquad))
-    integer :: irad_max
+    integer :: ix(size(x_out,1),size(x_out,2))
+    integer :: ix_max
 
-    integer :: itheta(size(xquad),size(xquad))
-    integer :: itheta_max
+    integer :: iy(size(x_out,1),size(x_out,2))
+    integer :: iy_max
 
-    real (dp_t) :: vol_rad_quad(size(xquad),size(xquad))
-    real (dp_t) :: vol_theta_quad(size(xquad),size(xquad))
+    real (dp_t) :: volx_quad(size(x_out,1),size(x_out,2))
+    real (dp_t) :: voly_quad(size(x_out,1),size(x_out,2))
+
 
     real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: state_quad(size(xquad),size(xquad))
+    real (dp_t) :: state_quad(size(x_out,1),size(x_out,1))
 
     integer :: i, ii, j, jj, n
 
-    irad_max = imax_in
-    itheta_max = jmax_in
+    ix_max = imax_chim
+    iy_max = jmax_chim
 
     if ( interp_method == 1 ) then
 
-      do j = 1, size(rad_out,4)
-        do i = 1, size(rad_out,3)
-          vol_rad_quad   = third * rad_out(:,:,i,j)**3
-          vol_theta_quad = one - cos( theta_out(:,:,i,j) )
+      do j = 1, size(x_out,4)
+        do i = 1, size(x_out,3)
+          volx_quad   = third * x_out(:,:,i,j)**3
+          voly_quad = one - cos( y_out(:,:,i,j) )
 
-          irad(:,:) = 0
-          itheta(:,:) = 0
+          ix(:,:) = 0
+          iy(:,:) = 0
           do jj = 1, nquad
             do ii = 1, nquad
-              if ( vol_rad_quad(ii,jj) <= vol_rad_cntr_in(1) ) then
-                irad(ii,jj) = 0
-              else if ( vol_rad_quad(ii,jj) >= vol_rad_cntr_in(irad_max) ) then
-                irad(ii,jj) = irad_max
+              if ( volx_quad(ii,jj) <= volx_c_chim(1) ) then
+                ix(ii,jj) = 0
+              else if ( volx_quad(ii,jj) >= volx_c_chim(ix_max) ) then
+                ix(ii,jj) = ix_max
               else
-                irad(ii,jj) = locate( vol_rad_quad(ii,jj), irad_max, vol_rad_cntr_in ) - 1
+                ix(ii,jj) = locate( volx_quad(ii,jj), ix_max, volx_c_chim ) - 1
               end if
-              if ( vol_theta_quad(ii,jj) <= vol_theta_cntr_in(1) ) then
-                itheta(ii,jj) = 0
-              else if ( vol_theta_quad(ii,jj) >= vol_theta_cntr_in(itheta_max) ) then
-                itheta(ii,jj) = itheta_max
+              if ( voly_quad(ii,jj) <= voly_c_chim(1) ) then
+                iy(ii,jj) = 0
+              else if ( voly_quad(ii,jj) >= voly_c_chim(iy_max) ) then
+                iy(ii,jj) = iy_max
               else
-                itheta(ii,jj) = locate( vol_theta_quad(ii,jj), itheta_max, vol_theta_cntr_in ) - 1
+                iy(ii,jj) = locate( voly_quad(ii,jj), iy_max, voly_c_chim ) - 1
               end if
             end do
           end do
 
-          call interp2d_linear( irad, irad_max, itheta, itheta_max, vol_rad_cntr_in, vol_theta_cntr_in, state_in, &
-          &                     vol_rad_quad, vol_theta_quad, state_quad )
+          call interp2d_linear( ix, ix_max, iy, iy_max, volx_c_chim, voly_c_chim, state_chim, &
+          &                     volx_quad, voly_quad, state_quad )
 
-          state_out(i,j) = zero
-          do jj = 1, nquad
-            do ii = 1, nquad
-              state_out(i,j) = state_out(i,j) + state_quad(ii,jj) * wquad(ii) * wquad(jj)
-            end do
-          end do
-          state_out(i,j) = state_out(i,j) * norm_quad
+          state_out(i,j) = quad_avg( wquad, state_quad )
+
         end do
       end do
 
     else if ( interp_method == 2 ) then
-      do j = 1, size(rad_out,4)
-        do i = 1, size(rad_out,3)
-          vol_rad_quad   = third * rad_out(:,:,i,j)**3
-          vol_theta_quad = one - cos( theta_out(:,:,i,j) )
+      do j = 1, size(x_out,4)
+        do i = 1, size(x_out,3)
+          volx_quad   = third * x_out(:,:,i,j)**3
+          voly_quad = one - cos( y_out(:,:,i,j) )
 
-          call interp2d_spline( vol_rad_cntr_in(1:irad_max), vol_theta_cntr_in(1:itheta_max), state_in(1:irad_max,1:itheta_max), &
-          &                     vol_rad_quad, vol_theta_quad, state_quad )
+          call interp2d_spline( volx_c_chim(1:ix_max), voly_c_chim(1:iy_max), state_chim(1:ix_max,1:iy_max), &
+          &                     volx_quad, voly_quad, state_quad )
 
-          state_out(i,j) = zero
-          do jj = 1, nquad
-            do ii = 1, nquad
-              state_out(i,j) = state_out(i,j) + state_quad(ii,jj) * wquad(ii) * wquad(jj)
-            end do
-          end do
-          state_out(i,j) = state_out(i,j) * norm_quad
+          state_out(i,j) = quad_avg( wquad, state_quad )
 
         end do
       end do

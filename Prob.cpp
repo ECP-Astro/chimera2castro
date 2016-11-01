@@ -3,8 +3,9 @@
 #include <Gravity_F.H>
 
 namespace {
-    Real r_sync = 0.5e9;
-    Real m_sync = 1.e33;  // Enclosed mass inside r_sync
+    Real r_sync = 0.0; // 3.396887076073252e+09;
+    Real m_sync = 0.0; // 6.161259792375299e+33; // Enclosed mass inside r_sync
+    Real g_sync = 0.0; //-3.450357424906158e+07; // g(r_sync) gravitational acceleration at r_sync
 }
 
 void
@@ -77,7 +78,11 @@ Castro::problem_post_init ()
     int index = r_sync/dr;
     BL_ASSERT(index < n1d);
 
-    Castro::point_mass = m_sync - radial_mass[index];
+    Real Gconst;
+    get_grav_const(&Gconst);
+
+    Castro::point_mass = -(g_sync - grav[index]) * r_sync * r_sync / Gconst;
+    //Castro::point_mass = m_sync - radial_mass[index];
 
     set_pointmass(&point_mass);
 

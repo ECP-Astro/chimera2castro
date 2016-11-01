@@ -42,10 +42,10 @@ EOS_dir     := helmholtz
 #EOS_dir     := stellarcollapse
 
 # This sets the network directory in $(MICROPHYSICS_HOME)/networks
-Network_dir := aprox21
+#Network_dir := aprox21
 #Network_dir := anp56
-#Network_dir := $(MICROPHYSICS_HOME)/networks/anp56
-#GENERAL_NET_INPUTS = $(MICROPHYSICS_HOME)/networks/$(Network_dir)/anp56.net
+Network_dir := general_null
+GENERAL_NET_INPUTS = $(MICROPHYSICS_HOME)/networks/$(Network_dir)/anp56.net
 
 INTEGRATOR_DIR := BS
 

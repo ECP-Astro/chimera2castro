@@ -1,3 +1,1 @@
-f90EXE_sources += probdata.f90 gquad.f90 bspline_module.f90 bspline_oo_module.f90 bspline_sub_module.f90 spline.f90 hdf5_read_write.f90 model_interp.f90 chimera_parser.f90 mesa_parser.f90 
-
-CEXE_sources += problem_post.cpp
+f90EXE_sources += probdata.f90 quadrature.f90 bspline_module.f90 bspline_oo_module.f90 bspline_sub_module.f90 spline.f90 hdf5_read_write.f90 model_interp.f90 chimera_parser.f90 mesa_parser.f90 
