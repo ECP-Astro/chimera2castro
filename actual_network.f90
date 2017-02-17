@@ -125,10 +125,10 @@ contains
 
     aux_names(1) = "Ye"
     short_aux_names(1) = "Ye"
-    aux_names(2) = "Zaux"
-    short_aux_names(2) = "Zaux"
-    aux_names(3) = "Aaux"
-    short_aux_names(3) = "Aaux"
+    aux_names(2) = "Aaux"
+    short_aux_names(2) = "Aaux"
+    aux_names(3) = "Zaux"
+    short_aux_names(3) = "Zaux"
 
   end subroutine actual_network_init
 

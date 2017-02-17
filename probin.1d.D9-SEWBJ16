@@ -1,0 +1,70 @@
+&fortin
+
+! chimera_fname =  "/Users/austin/Documents/research/chimera/D9-SEWBJ16/1D/chimera_06053_grid_1_01.h5"
+  chimera_fname =  "/Users/austin/Documents/research/chimera/D9-SEWBJ16/1D/ls_run/chimera_04545_grid_1_01.h5"
+! mesa_fname = "s15_0.8_mesa.d"
+
+  ! flag for interpolation method (1=linear, 2=spline)
+  interp_method = 1
+
+  ! flag for eos_input (1=rt,2=rh,3=tp,4=rp,5=re,6=ps,7=ph,8=th)
+  eos_input = 4
+
+! max_radius = 1.2d9
+
+! radius_inner = 2.9296875d6
+! rho_inner = 1.0d+8
+! temp_inner = 0.0d0
+
+  use_quad = .false.
+! nquad = 4
+
+/
+
+&tagging
+
+! denerr = 1.d9
+! max_denerr_lev = 5
+
+! dengrad = 1.d5
+! max_dengrad_lev = 0
+
+! temperr = 2.d9
+! max_temperr_lev = 4
+! tempgrad = 1.d8
+! max_tempgrad_lev = 4
+
+! velerr = 3.d9
+! max_velerr_lev = 4
+! velgrad = 1.d8
+! max_velgrad_lev = 0
+
+! pressgrad = 1.d22
+! max_pressgrad_lev = 4
+
+/
+
+&sponge
+
+  sponge_lower_factor = 1.0d0
+  sponge_upper_factor = 0.0d0
+  sponge_lower_radius = 2636718.75d0
+  sponge_upper_radius = 2636718.75d0
+! sponge_lower_density = 1.0d11
+! sponge_upper_density = 1.0d11
+  sponge_timescale = 1.0d-6
+
+/
+
+&extern
+
+! use_eos_coulomb = .false.
+! eos_file = "Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5"
+! eos_file = "Hempel_SFHxEOS_rho234_temp180_ye60_version_1.1_20120817.h5"
+! eos_file = "HShenEOS_rho220_temp180_ye65_version_1.1_20120817.h5"
+! eos_file = "LS220_234r_136t_50y_analmu_20091212_SVNr26.h5"
+! eos_file = "LS220_240r_140t_50y_analmu_20120628_SVNr28.h5"
+  eos_file = "LS220_253r_136t_50y_012317.h5"
+! use_energy_shift = .true.
+
+/

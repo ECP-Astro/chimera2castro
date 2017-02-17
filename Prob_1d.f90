@@ -7,26 +7,34 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use bl_error_module
   use bl_types
   use eos_module
-  use prob_params_module, only : center
+  use parallel, only: parallel_IOProcessor
+  use prob_params_module, only: center
   use interpolate_module, only: locate
   use model_interp_module, only: interp1d_linear
+  use quadrature_module, only: quad_init
 
   implicit none
   integer :: init, namlen
   integer :: name(namlen)
   real (dp_t) :: problo(1), probhi(1)
 
-  integer :: untin,i,j,k,dir
+  integer :: untin,i,dir
   real (dp_t) :: r, dr, dvol, volr, dvolr, gr
   real (dp_t) :: mass_chim, mass_mesa, vol_chim, vol_mesa
+  real (dp_t) :: domega, point_mass, mass_inner
 
-  namelist /fortin/ model_name
-  namelist /fortin/ mesa_name
-  namelist /fortin/ model_eos_input
-  namelist /fortin/ model_interp_method
-  namelist /fortin/ r_inner
+  namelist /fortin/ chimera_fname
+  namelist /fortin/ mesa_fname
+  namelist /fortin/ eos_input
+  namelist /fortin/ interp_method
   namelist /fortin/ max_radius
+  namelist /fortin/ radius_inner
+  namelist /fortin/ rho_inner
+  namelist /fortin/ temp_inner
+  namelist /fortin/ i_inner
   namelist /fortin/ do_particles
+  namelist /fortin/ use_quad
+  namelist /fortin/ nquad
 
   !
   !     Build "probin" filename -- the name of file containing fortin namelist.
@@ -34,7 +42,10 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   integer, parameter :: maxlen = 127
   character(maxlen) :: probin
   character(maxlen) :: model
-  integer :: ipp, ierr, ipp1
+  integer :: ipp, ierr, ipp1, n
+
+  ! assume axisymmetric
+  center(1) = zero
 
   if (namlen .gt. maxlen) call bl_error("probin file name too long")
 
@@ -43,107 +54,148 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   end do
 
   ! set namelist defaults
-  model_eos_input = eos_input_rt
-  model_interp_method = 1
-  r_inner = zero
+  chimera_fname = ""
+  mesa_fname = ""
+  interp_method = 1
+  eos_input = eos_input_rt
   max_radius = zero
-  model_name = ""
-  mesa_name = ""
+  radius_inner = zero
+  rho_inner = zero
+  temp_inner = zero
+  i_inner = 1
   do_particles = .false.
+  use_quad = .false.
+  nquad = 2
 
   ! Read namelists
-  untin = 9 
-  open(untin,file=probin(1:namlen),form='formatted',status='old')
+  open(newunit=untin,file=probin(1:namlen),form='formatted',status='old')
   read(untin,fortin)
-  close(unit=untin)
+  close(untin)
 
-  if ( trim(model_name) == "" ) then
-    call bl_error("must specify string for model_name")
+  if ( len_trim(chimera_fname) == 0 ) then
+    call bl_error("must specify string for chimera_fname")
   end if
 
-  if ( model_eos_input /= eos_input_rt .and. &
-  &    model_eos_input /= eos_input_rp .and. &
-  &    model_eos_input /= eos_input_re .and. &
-  &    model_eos_input /= eos_input_ps ) then
-    call bl_error("invalid value for model_eos_input")
+  if ( eos_input /= eos_input_rt .and. &
+  &    eos_input /= eos_input_rp .and. &
+  &    eos_input /= eos_input_re .and. &
+  &    eos_input /= eos_input_ps ) then
+    call bl_error("invalid value for eos_input")
   end if
 
-  if ( model_interp_method /= 1 .and. model_interp_method /= 2 ) then
-    call bl_error("invalid value for model_interp_method")
+  if ( interp_method /= 1 .and. interp_method /= 2 ) then
+    call bl_error("invalid value for interp_method")
   end if
 
-  ! open initial model
-  call open_chimera_file(model_name)
-
-  ! read initial model
+  ! load chimera model
+  call open_chimera_file(chimera_fname)
   call read_chimera_file
 
-  if ( .not. trim(mesa_name) == "" ) then
-    call read_mesa_file(mesa_name)
+  ! load mesa model
+  if ( len_trim(mesa_fname) > 0 ) then
+    call read_mesa_file(mesa_fname)
   end if
 
+  ! set the max radius to use chimera data
+  ! if r > max_radius, use mesa data
   if ( max_radius <= zero ) then
-    max_radius = rad_edge_in(imax_in+1)
+    ! by default, use the volume-center of outer-most chimera zone (excluding ghost zones)
+    ! this obviates the need for any extrapolation of chimera data
+    max_radius = (three * volx_c_chim(imax_chim) )**third
+!   imax_radius = imax_chim
+! else
+!   volr = third * max_radius**3
+!   imax_radius = locate( volr, imax_chim, volx_c_chim ) - 1
   end if
 
-  ! integrate mass from CHIMERA model on CASTRO grid
+  ! set the inner radius to be the max of the user-defined value or the inner grid boundary
+  radius_inner = max( problo(1), radius_inner )
+
+  ! set the interior density/temperature if not user-defined
+  if ( radius_inner > zero ) then
+!   volr = third * radius_inner**3
+!   if ( volr <= volx_c_chim(1) ) then
+!     i = 0
+!   else if ( volr >= volx_c_chim(imax_chim) ) then
+!     i = imax_chim
+!   else
+!     i = locate( volr, imax_chim, volx_c_chim ) - 1
+!   end if
+!   i_inner = i
+!
+!   if ( rho_inner <= zero ) then
+!     call interp1d_linear( i, imax_chim, volx_c_chim, rhobar_c_chim, volr, rho_inner )
+!   end if
+!   if ( temp_inner <= zero ) then
+!     call interp1d_linear( i, imax_chim, volx_c_chim, tbar_c_chim, volr, temp_inner )
+!   end if
+!   mass_inner = four * m_pi * rho_inner * third * radius_inner**3
+    mass_inner = zero
+  else
+    mass_inner = zero
+  end if
+
+  ! integrate mass from chimera data on castro grid
   mass_chim = zero
   vol_chim = zero
-  do i = imin_in, imax_in
-    if ( rad_edge_in(i) < min(probhi(1),max_radius) ) then
-      if ( rad_edge_in(i+1) <= min(probhi(1),max_radius) ) then
-        mass_chim = mass_chim + sum(zone_mass_in(i,jmin_in:jmax_in,kmin_in:kmax_in))
-        vol_chim = vol_chim + sum(volume_in(i,jmin_in:jmax_in,kmin_in:kmax_in))
+  do i = imin_chim, imax_chim
+    if ( x_e_chim(i) < min(probhi(1),max_radius) ) then
+      if ( x_e_chim(i+1) <= min(probhi(1),max_radius) ) then
+        mass_chim = mass_chim + sum(dmass_e_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim))
+        vol_chim = vol_chim + sum(dvol_e_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim))
       else
-        dr = rad_edge_in(i+1) - min(probhi(1),max_radius)
-        dvolr = dr * ( rad_edge_in(i) * min(probhi(1),max_radius) + dr * dr * third )
-        dvol  = four * m_pi * ( dvol_rad_in(i) - dvolr )
+        dr = x_e_chim(i+1) - min(probhi(1),max_radius)
+        dvolr = dr * ( x_e_chim(i) * min(probhi(1),max_radius) + dr * dr * third )
+        dvol  = four * m_pi * ( dvolx_e_chim(i) - dvolr )
 
         vol_chim = vol_chim + dvol
-        mass_chim = mass_chim + &
-        &           sum( dens_in(i,jmin_in:jmax_in,kmin_in:kmax_in) * domega_in(jmin_in:jmax_in,kmin_in:kmax_in) ) &
-        &           * ( dvol_rad_in(i) - dvolr )
+        mass_chim = mass_chim &
+          &         + sum( rho_c_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim) &
+          &                * domega_chim(jmin_chim:jmax_chim,kmin_chim:kmax_chim) ) &
+          &         * ( dvolx_e_chim(i) - dvolr )
       end if
     end if
   end do
 
-  ! integrate mass from MESA model on CASTRO grid
+  ! integrate mass from mesa data on castro grid
   mass_mesa = zero
   vol_mesa = zero
-  do i = 1, nx_mesa_in
-    if ( rad_edge_mesa_in(i+1) > max_radius .and. &
-    &    rad_edge_mesa_in(i)   < probhi(1) ) then
+  do i = 1, imax_mesa
+    if ( x_e_mesa(i+1) > max_radius .and. &
+    &    x_e_mesa(i)   < probhi(1) ) then
+
+      domega = four * m_pi
 
       dvolr = zero
-      if ( rad_edge_mesa_in(i+1) > probhi(1) ) then
-        dr = rad_edge_mesa_in(i+1) - probhi(1)
-        dvolr = dvolr + dr * ( probhi(1) * rad_edge_mesa_in(i) + dr * dr * third )
+      if ( x_e_mesa(i+1) > probhi(1) ) then
+        dr = x_e_mesa(i+1) - probhi(1)
+        dvolr = dvolr + dr * ( probhi(1) * x_e_mesa(i) + dr * dr * third )
       end if
 
-      if ( rad_edge_mesa_in(i) < max_radius ) then
-        dr = max_radius - rad_edge_mesa_in(i) 
-        dvolr = dvolr + dr * ( rad_edge_mesa_in(i) * max_radius + dr * dr * third )
+      if ( x_e_mesa(i) < max_radius ) then
+        dr = max_radius - x_e_mesa(i) 
+        dvolr = dvolr + dr * ( x_e_mesa(i) * max_radius + dr * dr * third )
       end if
 
-      dvol = four * m_pi * ( dvol_rad_mesa_in(i) - dvolr )
+      dvol = domega * ( dvolx_e_mesa(i) - dvolr )
 
       vol_mesa = vol_mesa + dvol
-      mass_mesa = mass_mesa + dvol * dens_mesa_in(i)
+      mass_mesa = mass_mesa + dvol * rho_c_mesa(i)
 
     end if
   end do
 
-  ! Get the gravitational acceleration to compare with CASTRO
+  ! compare gravitational acceleration from edge of chimera grid with castro
   r = min( probhi(1), max_radius )
   volr = third * r**3
-  if ( volr <= vol_rad_cntr_in(1) ) then
+  if ( volr <= volx_c_chim(1) ) then
     i = 0
-  else if ( volr >= vol_rad_cntr_in(imax_in) ) then
-    i = imax_in
+  else if ( volr >= volx_c_chim(imax_chim) ) then
+    i = imax_chim
   else
-    i = locate( volr, imax_in, vol_rad_cntr_in ) - 1
+    i = locate( volr, imax_chim, volx_c_chim ) - 1
   end if
-  call interp1d_linear( i, imax_in, vol_rad_cntr_in, grad_avg_in, volr, gr )
+  call interp1d_linear( i, imax_chim, volx_c_chim, gravx_c_avg_chim, volr, gr )
 
   if (parallel_IOProcessor()) then
     write(*,'(a,2es23.15)') 'average g(r) (chimera)        =',r,gr
@@ -153,22 +205,33 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
 
     write(*,'(a,2es23.15)') 'total volume (chimera, mesa)  =',vol_chim,vol_mesa
     write(*,'(a,es23.15)')  'total volume (chimera + mesa) =',vol_chim+vol_mesa
-    write(*,'(a,es23.15)')  'total volume (castro)         =',m_pi * (probhi(1)**2-problo(1)**2) * ( probhi(2)-problo(2) )
+    dr = probhi(1) - problo(1)
+    write(*,'(a,es23.15)')  'total volume (castro)         =',four * m_pi * dr * ( problo(1) * probhi(1) + dr * dr * third )
   end if
 
+  ! set up quadrature weights and abscissae
+  if ( use_quad ) call quad_init( nquad )
+
   point_mass = zero
-  do i = 1, imax_in
-    if ( rad_cntr_in(i) <= problo(1) ) then
-      point_mass = point_mass + sum( zone_mass_in(i,:,:) )
-    else if ( vol_rad_cntr_in(i) <= third*r_inner**3 ) then
-      point_mass = point_mass + sum( zone_mass_in(i,:,:) )
+  do i = 1, imax_chim+1
+    if ( x_e_chim(i) < radius_inner ) then
+      if ( x_e_chim(i+1) <= radius_inner ) then
+        point_mass = point_mass + sum( dmass_e_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim) )
+      else
+        dr = x_e_chim(i+1) - radius_inner
+        dvolr = dr * ( radius_inner * x_e_chim(i+1) + dr * dr * third )
+        point_mass = point_mass &
+          &         + sum( rho_c_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim) &
+          &                * domega_chim(jmin_chim:jmax_chim,kmin_chim:kmax_chim) ) &
+          &         * ( dvolx_e_chim(i) - dvolr )
+      end if
     end if
   end do
+  point_mass = point_mass - mass_inner
+
   if (parallel_IOProcessor()) then
     write(*,*) 'point_mass=',point_mass
   end if
-
-  center(1) = zero
 
   return
 end subroutine PROBINIT
@@ -187,7 +250,7 @@ end subroutine PROBINIT
 ! ::: level     => amr level of grid
 ! ::: time      => time at which to init data             
 ! ::: lo,hi     => index limits of grid interior (cell centered)
-! ::: nvar      => number of state components.
+! ::: nscal     => number of state components.
 ! ::: state     <= scalar array
 ! ::: dx        => cell size
 ! ::: xlo, xhi  => physical locations of lower left and upper
@@ -199,15 +262,19 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
                        state,state_l1,state_h1, &
                        dx,xlo,xhi)
 
+  use bl_constants_module
   use bl_error_module
   use bl_types
-  use chimera_parser_module
-  use mesa_parser_module
   use fundamental_constants_module
   use eos_module
+  use eos_type_module, only: minye, maxye
   use meth_params_module, only : URHO, UMX, UMY, UMZ, UEINT, UFS, UTEMP, UEDEN, UFX, UFA
-  use network, only: nspec
+  use network, only: nspec, naux
+  use parallel, only: parallel_IOProcessor
   use probdata_module
+  use chimera_parser_module
+  use mesa_parser_module
+  use quadrature_module, only: xquad, wquad, quad_avg
 
   implicit none
 
@@ -218,145 +285,187 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
   double precision :: state(state_l1:state_h1,nvar)
 
   ! local variables
-  real (dp_t) :: x(lo(1):hi(1))
-  real (dp_t) :: rho_chim(lo(1):hi(1))
-  real (dp_t) :: temp_chim(lo(1):hi(1))
-  real (dp_t) :: pressure_chim(lo(1):hi(1))
-  real (dp_t) :: eint_chim(lo(1):hi(1))
-  real (dp_t) :: entropy_chim(lo(1):hi(1))
-  real (dp_t) :: xn_chim(lo(1):hi(1),nspec)
-  real (dp_t) :: vrad_chim(lo(1):hi(1))
-  real (dp_t) :: vtheta_chim(lo(1):hi(1))
-  real (dp_t) :: vphi_chim(lo(1):hi(1))
-  real (dp_t) :: rho_mesa(lo(1):hi(1))
-  real (dp_t) :: temp_mesa(lo(1):hi(1))
-  real (dp_t) :: xn_mesa(lo(1):hi(1),nspec)
-  real (dp_t) :: vrad_mesa(lo(1):hi(1))
-  integer :: i, n
+  real (dp_t) :: xcen(lo(1):hi(1))
+
+  real (dp_t) :: rho_i_chim(lo(1):hi(1))
+  real (dp_t) :: t_i_chim(lo(1):hi(1))
+  real (dp_t) :: p_i_chim(lo(1):hi(1))
+  real (dp_t) :: e_i_chim(lo(1):hi(1))
+  real (dp_t) :: s_i_chim(lo(1):hi(1))
+  real (dp_t) :: xn_i_chim(nspec,lo(1):hi(1))
+  real (dp_t) :: u_i_chim(lo(1):hi(1))
+  real (dp_t) :: v_i_chim(lo(1):hi(1))
+  real (dp_t) :: w_i_chim(lo(1):hi(1))
+  real (dp_t) :: ye_i_chim(lo(1):hi(1))
+  real (dp_t) :: a_aux_i_chim(lo(1):hi(1))
+  real (dp_t) :: z_aux_i_chim(lo(1):hi(1))
+
+  real (dp_t) :: rho_i_mesa(lo(1):hi(1))
+  real (dp_t) :: t_i_mesa(lo(1):hi(1))
+  real (dp_t) :: xn_i_mesa(nspec,lo(1):hi(1))
+  real (dp_t) :: u_i_mesa(lo(1):hi(1))
+  real (dp_t) :: ye_i_mesa(lo(1):hi(1))
+  real (dp_t) :: a_aux_i_mesa(lo(1):hi(1))
+  real (dp_t) :: z_aux_i_mesa(lo(1):hi(1))
+
+  real (dp_t) :: xg(nquad)
+  real (dp_t) :: rho_quad(nquad)
+  real (dp_t) :: t_quad(nquad)
+  real (dp_t) :: p_quad(nquad)
+  real (dp_t) :: e_quad(nquad)
+  real (dp_t) :: s_quad(nquad)
+  real (dp_t) :: u_quad(nquad)
+  real (dp_t) :: v_quad(nquad)
+  real (dp_t) :: w_quad(nquad)
+  real (dp_t) :: xn_quad(nquad)
+  real (dp_t) :: ye_quad(nquad)
+  real (dp_t) :: a_aux_quad(nquad)
+  real (dp_t) :: z_aux_quad(nquad)
+
+  integer :: i, ii, n
 
   type (eos_t) :: eos_state
 
-  x = zero
+! real (dp_t), parameter :: delta = 2.9296875d6
+
   do i = lo(1), hi(1)
-    x(i) = xlo(1) + dx(1)*(dble(i-lo(1)) + half)
+    xcen(i) = xlo(1) + dx(1)*(dble(i-lo(1)) + half)
   end do
 
-  select case (model_eos_input)
-    case (eos_input_rt)
-      call interp1d_chimera( x, dens_in(:,1,1), rho_chim, model_interp_method )
-      call interp1d_chimera( x, temp_in(:,1,1), temp_chim, model_interp_method )
-    case (eos_input_rp)
-      call interp1d_chimera( x, dens_in(:,1,1), rho_chim, model_interp_method )
-      call interp1d_chimera( x, pres_in(:,1,1), pressure_chim, model_interp_method )
-    case (eos_input_re)
-      call interp1d_chimera( x, dens_in(:,1,1), rho_chim, model_interp_method )
-      call interp1d_chimera( x, eint_in(:,1,1), eint_chim, model_interp_method )
-    case (eos_input_ps)
-      call interp1d_chimera( x, enpy_in(:,1,1), entropy_chim, model_interp_method )
-      call interp1d_chimera( x, pres_in(:,1,1), pressure_chim, model_interp_method )
-    case default
-      call interp1d_chimera( x, dens_in(:,1,1), rho_chim, model_interp_method )
-      call interp1d_chimera( x, temp_in(:,1,1), temp_chim, model_interp_method )
-  end select
-  do n = 1, nspec
-    call interp1d_chimera( x, xn_in(n,:,1,1), xn_chim(:,n), model_interp_method )
-  end do
-  call interp1d_chimera( x, vrad_in(:,1,1), vrad_chim, model_interp_method )
-  call interp1d_chimera( x, vtheta_in(:,1,1), vtheta_chim, model_interp_method )
-  call interp1d_chimera( x, vphi_in(:,1,1), vphi_chim, model_interp_method )
+  if ( use_quad ) then
+    do i = lo(1), hi(1)
+      do ii = 1, nquad
+        xg(ii) = xcen(i) + half*dx(1)*xquad(ii)
+      end do
 
-  if ( .not. trim(mesa_name) == "" ) then
-    call interp1d_mesa( x, dens_mesa_in, rho_mesa, model_interp_method )
-    call interp1d_mesa( x, temp_mesa_in, temp_mesa, model_interp_method )
-    do n = 1, nspec
-      call interp1d_mesa( x, xn_mesa_in(:,n), xn_mesa(:,n), model_interp_method )
+      call interp1d_chimera( xg, u_c_chim(:,1,1), u_quad )
+      call interp1d_chimera( xg, v_c_chim(:,1,1), v_quad )
+      call interp1d_chimera( xg, w_c_chim(:,1,1), w_quad )
+      call interp1d_chimera( xg, rho_c_chim(:,1,1), rho_quad )
+      call interp1d_chimera( xg, t_c_chim(:,1,1), t_quad )
+      call interp1d_chimera( xg, p_c_chim(:,1,1), p_quad )
+      if ( trim(eos_name) == "stellarcollapse" ) then
+        call interp1d_chimera( xg, ei_c_chim(:,1,1), e_quad )
+      else
+        call interp1d_chimera( xg, et_c_chim(:,1,1), e_quad )
+      end if
+      call interp1d_chimera( xg, s_c_chim(:,1,1), s_quad )
+      do n = 1, nspec
+        call interp1d_chimera( xg, xn_c_chim(n,:,1,1), xn_quad )
+        xn_i_chim(n,i) = quad_avg( wquad, xn_quad )
+      end do
+      call interp1d_chimera( xg, ye_c_chim(:,1,1), ye_quad )
+      call interp1d_chimera( xg, a_aux_c_chim(:,1,1), a_aux_quad )
+      call interp1d_chimera( xg, z_aux_c_chim(:,1,1), z_aux_quad )
+
+      u_i_chim(i) = quad_avg( wquad, u_quad )
+      v_i_chim(i) = quad_avg( wquad, v_quad )
+      w_i_chim(i) = quad_avg( wquad, w_quad )
+      rho_i_chim(i) = quad_avg( wquad, rho_quad )
+      t_i_chim(i) = quad_avg( wquad, t_quad )
+      p_i_chim(i) = quad_avg( wquad, p_quad )
+      e_i_chim(i) = quad_avg( wquad, e_quad )
+      s_i_chim(i) = quad_avg( wquad, s_quad )
+      ye_i_chim(i) = quad_avg( wquad, ye_quad )
+      a_aux_i_chim(i) = quad_avg( wquad, a_aux_quad )
+      z_aux_i_chim(i) = quad_avg( wquad, z_aux_quad )
     end do
-    call interp1d_mesa( x, vrad_mesa_in, vrad_mesa, model_interp_method )
+  else
+    call interp1d_chimera( xcen, u_c_chim(:,1,1), u_i_chim )
+    call interp1d_chimera( xcen, v_c_chim(:,1,1), v_i_chim )
+    call interp1d_chimera( xcen, w_c_chim(:,1,1), w_i_chim )
+    call interp1d_chimera( xcen, rho_c_chim(:,1,1), rho_i_chim )
+    call interp1d_chimera( xcen, t_c_chim(:,1,1), t_i_chim )
+    call interp1d_chimera( xcen, p_c_chim(:,1,1), p_i_chim )
+    if ( trim(eos_name) == "stellarcollapse" ) then
+      call interp1d_chimera( xcen, ei_c_chim(:,1,1), e_i_chim )
+    else
+      call interp1d_chimera( xcen, et_c_chim(:,1,1), e_i_chim )
+    end if
+    call interp1d_chimera( xcen, s_c_chim(:,1,1), s_i_chim )
+    do n = 1, nspec
+      call interp1d_chimera( xcen, xn_c_chim(n,:,1,1), xn_i_chim(n,:) )
+    end do
+    call interp1d_chimera( xcen, ye_c_chim(:,1,1), ye_i_chim )
+    call interp1d_chimera( xcen, a_aux_c_chim(:,1,1), a_aux_i_chim )
+    call interp1d_chimera( xcen, z_aux_c_chim(:,1,1), z_aux_i_chim )
+  end if
+
+  if ( len_trim(mesa_fname) > 0 ) then
+    call interp1d_mesa( xcen, u_c_mesa, u_i_mesa )
+    call interp1d_mesa( xcen, rho_c_mesa, rho_i_mesa )
+    call interp1d_mesa( xcen, t_c_mesa, t_i_mesa )
+    do n = 1, nspec
+      call interp1d_mesa( xcen, xn_c_mesa(:,n), xn_i_mesa(n,:) )
+    end do
+    call interp1d_mesa( xcen, ye_c_mesa, ye_i_mesa )
+    call interp1d_mesa( xcen, a_aux_c_mesa, a_aux_i_mesa )
+    call interp1d_mesa( xcen, z_aux_c_mesa, z_aux_i_mesa )
   end if
 
   do i = lo(1), hi(1)
 
-    xn_chim(i,:) = xn_chim(i,:) / sum( xn_chim(i,:) )
-    xn_mesa(i,:) = xn_mesa(i,:) / sum( xn_mesa(i,:) )
+    xn_i_chim(:,i) = xn_i_chim(:,i) / sum( xn_i_chim(:,i) )
+    xn_i_mesa(:,i) = xn_i_mesa(:,i) / sum( xn_i_mesa(:,i) )
 
-    if ( x(i) <= max_radius .or. trim(mesa_name) == "" ) then
-      select case (model_eos_input)
-        case (eos_input_rt)
-          eos_state%rho = rho_chim(i)
-          eos_state%T = temp_chim(i)
-        case (eos_input_rp)
-          eos_state%rho = rho_chim(i)
-          eos_state%p = pressure_chim(i)
-        case (eos_input_re)
-          eos_state%rho = rho_chim(i)
-          eos_state%e = eint_chim(i)
-        case (eos_input_ps)
-          eos_state%p = pressure_chim(i)
-          eos_state%s = entropy_chim(i)
-        case default
-          eos_state%rho = rho_chim(i)
-          eos_state%T = temp_chim(i)
-      end select
-      eos_state%xn(:) = xn_chim(i,:)
+    if ( xcen(i) <= max_radius .or. len_trim(mesa_fname) == 0 ) then
 
-      call eos(model_eos_input, eos_state)
+      state(i,UMX) = u_i_chim(i)
+      state(i,UMY) = v_i_chim(i)
+      state(i,UMZ) = w_i_chim(i)
 
-      state(i,UMX) = vrad_chim(i)
-      state(i,UMY) = vtheta_chim(i)
-      state(i,UMZ) = vphi_chim(i)
-      state(i,UFS:UFS+nspec-1) = xn_chim(i,:)
+      eos_state%rho = rho_i_chim(i)
+      eos_state%T = t_i_chim(i)
+      eos_state%p = p_i_chim(i)
+      eos_state%e = e_i_chim(i)
+      eos_state%s = s_i_chim(i)
+      eos_state%xn(:) = xn_i_chim(:,i)
+      if ( naux == 1 ) then
+        eos_state%aux(1) = min( maxye, max( minye, ye_i_chim(i) ) )
+      else if ( naux == 2 ) then
+        eos_state%aux(1) = a_aux_i_chim(i)
+        eos_state%aux(2) = z_aux_i_chim(i)
+      else if ( naux == 3 ) then
+        eos_state%aux(1) = min( maxye, max( minye, ye_i_chim(i) ) )
+        eos_state%aux(2) = a_aux_i_chim(i)
+        eos_state%aux(3) = z_aux_i_chim(i)
+      end if
 
-      select case (model_eos_input)
-        case (eos_input_rt)
-          state(i,URHO) = rho_chim(i)
-          state(i,UTEMP) = temp_chim(i)
-          state(i,UEINT) = eos_state%e
-        case (eos_input_rp)
-          state(i,URHO) = rho_chim(i)
-          state(i,UTEMP) = eos_state%T
-          state(i,UEINT) = eos_state%e
-        case (eos_input_re)
-          state(i,URHO) = rho_chim(i)
-          state(i,UTEMP) = eos_state%T
-          state(i,UEINT) = eint_chim(i)
-        case (eos_input_ps)
-          state(i,URHO) = eos_state%rho
-          state(i,UTEMP) = eos_state%T
-          state(i,UEINT) = eos_state%e
-        case default
-          state(i,URHO) = rho_chim(i)
-          state(i,UTEMP) = temp_chim(i)
-          state(i,UEINT) = eos_state%e
-      end select
+      call eos(eos_input, eos_state)
 
     else
 
-      eos_state%rho = rho_mesa(i)
-      eos_state%T = temp_mesa(i)
-      eos_state%xn(:) = xn_mesa(i,:)
-      call eos(eos_input_rt, eos_state)
-
-      state(i,UMX) = vrad_mesa(i)
+      state(i,UMX) = u_i_mesa(i)
       state(i,UMY) = zero
       state(i,UMZ) = zero
-      state(i,UFS:UFS+nspec-1) = xn_mesa(i,:)
 
-      state(i,URHO) = rho_mesa(i)
-      state(i,UTEMP) = temp_mesa(i)
-      state(i,UEINT) = eos_state%e
+      eos_state%rho = rho_i_mesa(i)
+      eos_state%T = t_i_mesa(i)
+      eos_state%xn(:) = xn_i_mesa(:,i)
+      if ( naux == 1 ) then
+        eos_state%aux(1) = min( maxye, max( minye, ye_i_mesa(i) ) )
+      else if ( naux == 2 ) then
+        eos_state%aux(1) = a_aux_i_mesa(i)
+        eos_state%aux(2) = z_aux_i_mesa(i)
+      else if ( naux == 3 ) then
+        eos_state%aux(1) = min( maxye, max( minye, ye_i_mesa(i) ) )
+        eos_state%aux(2) = a_aux_i_mesa(i)
+        eos_state%aux(3) = z_aux_i_mesa(i)
+      end if
 
-!     write(*,*) 'using mesa values'
+      call eos(eos_input_rt, eos_state)
 
     end if
 
-  end do
-
-  do i = lo(1), hi(1)
-
-    state(i,UEINT)   = state(i,URHO) * state(i,UEINT)
-    state(i,UEDEN)   = state(i,UEINT) + state(i,URHO)*sum( half*state(i,UMX:UMZ)**2 )
-    state(i,UMX:UMZ) = state(i,URHO) * state(i,UMX:UMZ)
-    state(i,UFS:UFS+nspec-1) = state(i,URHO) * state(i,UFS:UFS+nspec-1)
+    state(i,URHO)    = eos_state%rho
+    state(i,UTEMP)   = eos_state%T
+    state(i,UEINT)   = eos_state%rho * eos_state%e
+    state(i,UEDEN)   = eos_state%rho * ( half * sum( state(i,UMX:UMZ)**2 ) + eos_state%e )
+    state(i,UMX:UMZ) = eos_state%rho * state(i,UMX:UMZ)
+    state(i,UFS:UFS+nspec-1) = eos_state%rho * eos_state%xn(:)
+    if ( naux > 0 ) then
+      state(i,UFX:UFX+naux-1) = eos_state%rho * eos_state%aux(:)
+    end if
 
   end do
 

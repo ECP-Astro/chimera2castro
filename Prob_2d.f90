@@ -28,10 +28,13 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   namelist /fortin/ eos_input
   namelist /fortin/ interp_method
   namelist /fortin/ max_radius
-  namelist /fortin/ min_radius
+  namelist /fortin/ radius_inner
   namelist /fortin/ rho_inner
+  namelist /fortin/ temp_inner
+  namelist /fortin/ i_inner
   namelist /fortin/ do_particles
   namelist /fortin/ use_quad
+  namelist /fortin/ nquad
 
   !
   !     Build "probin" filename -- the name of file containing fortin namelist.
@@ -57,8 +60,10 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   interp_method = 1
   eos_input = eos_input_rt
   max_radius = zero
-  min_radius = zero
+  radius_inner = zero
   rho_inner = zero
+  temp_inner = zero
+  i_inner = 1
   do_particles = .false.
   use_quad = .false.
   nquad = 2
@@ -424,8 +429,8 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
       if ( r(i,j) <= max_radius .or. len_trim(mesa_fname) == 0 ) then
 
-        if ( r(i,j) < min_radius ) then
-!         drho = half * ( rho_i_chim(i,j) - rho_inner ) * ( one + tanh( (min_radius - r(i,j))/dsmooth) )
+        if ( r(i,j) < radius_inner ) then
+!         drho = half * ( rho_i_chim(i,j) - rho_inner ) * ( one + tanh( (radius_inner - r(i,j))/dsmooth) )
 !         state(i,j,URHO) = rho_i_chim(i,j) + drho
           state(i,j,URHO) = rho_inner
           eos_state%rho = state(i,j,URHO)

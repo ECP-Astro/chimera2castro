@@ -60,8 +60,13 @@ module chimera_parser_module
   real (dp_t), allocatable, save :: ye_c_chim(:,:,:)
   real (dp_t), allocatable, save :: p_c_chim(:,:,:)
   real (dp_t), allocatable, save :: ei_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: et_c_chim(:,:,:)
   real (dp_t), allocatable, save :: eb_c_chim(:,:,:)
+  real (dp_t), allocatable, save :: em_c_chim(:,:,:)
   real (dp_t), allocatable, save :: s_c_chim(:,:,:)
+
+  real (dp_t), allocatable, save :: rhobar_c_chim(:)
+  real (dp_t), allocatable, save :: tbar_c_chim(:)
 
   ! gravity data
   real (dp_t), allocatable, save :: gravx_c_chim(:,:,:)
@@ -328,12 +333,16 @@ contains
     allocate (ye_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (p_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (ei_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (et_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (eb_c_chim(nx_chim,ny_chim,nz_chim))
+    allocate (em_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (s_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (gravx_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (gravy_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (gravz_c_chim(nx_chim,ny_chim,nz_chim))
     allocate (gravx_c_avg_chim(nx_chim))
+    allocate (rhobar_c_chim(nx_chim))
+    allocate (tbar_c_chim(nx_chim))
 
     ! read velocity variables
     datasize3d = (/ nx_chim, ny_chim, nz_chim /)
@@ -350,6 +359,9 @@ contains
     call read_ray_hyperslab('e_int',   ei_c_chim,  group_id, datasize3d, slab_offset3d)
     call read_ray_hyperslab('entropy', s_c_chim,   group_id, datasize3d, slab_offset3d)
 
+    ! convert units to erg/K
+    s_c_chim(:,:,:) = s_c_chim(:,:,:) * k_B * n_A
+
     dmass_e_chim(:,:,:) = rho_c_chim(:,:,:) * dvol_e_chim(:,:,:)
 
     ! read gravity variables
@@ -361,6 +373,8 @@ contains
     end do
 
     do i = 1, nx_chim
+      rhobar_c_chim(i) = sum( rho_c_chim(i,:,:) * domega_chim(:,:) ) / omega_chim
+      tbar_c_chim(i) = sum( t_c_chim(i,:,:) * domega_chim(:,:) ) / omega_chim
       gravx_c_avg_chim(i) = sum( gravx_c_chim(i,:,:) * domega_chim(:,:) ) / omega_chim
     end do
 
@@ -458,11 +472,15 @@ contains
       eb_c_chim(:,:,:) = eb_c_chim(:,:,:) - xn_read(i,:,:,:)*be_nuc_chim(i)/a_nuc_chim(i)
     end do
     eb_c_chim(:,:,:) = eb_c_chim(:,:,:) - xn_read(nnc_chim,:,:,:)*be_aux_c_chim(:,:,:)/a_aux_c_chim(:,:,:)
+
     ! convert from MeV/c^2 to erg/g
     eb_c_chim(:,:,:) = eb_c_chim(:,:,:) * MeV2eV * ev2erg * n_A
 
-    ! remove b.e. and constant offset from internal energy
-    ei_c_chim(:,:,:) = ei_c_chim(:,:,:) - eb_c_chim(:,:,:) - 8.9_dp_t * MeV2eV * ev2erg * n_A
+    ! rest mass energy (including electrons) relative to free neutrons
+    em_c_chim(:,:,:) = - ( m_n - m_p - m_e ) * ye_c_chim(:,:,:) * c_light * c_light * n_A + eb_c_chim(:,:,:)
+
+    ! remove rest mass energy and constant offset from internal energy
+    et_c_chim(:,:,:) = ei_c_chim(:,:,:) - em_c_chim(:,:,:) - 8.9_dp_t * MeV2eV * ev2erg * n_A
 
     ! close abundance group
     call h5gclose_f(group_id, ierr)
@@ -546,12 +564,16 @@ contains
        deallocate(ye_c_chim)
        deallocate(p_c_chim)
        deallocate(ei_c_chim)
+       deallocate(et_c_chim)
        deallocate(eb_c_chim)
+       deallocate(em_c_chim)
        deallocate(s_c_chim)
        deallocate(gravx_c_chim)
        deallocate(gravy_c_chim)
        deallocate(gravz_c_chim)
        deallocate(gravx_c_avg_chim)
+       deallocate(rhobar_c_chim)
+       deallocate(tbar_c_chim)
        deallocate(a_nuc_chim)
        deallocate(z_nuc_chim)
        deallocate(mex_nuc_chim)

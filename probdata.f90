@@ -3,9 +3,9 @@ module probdata_module
   use bl_types
 
   ! chimera hdf5 filename
-  character (len=80), save :: chimera_fname
+  character (256), save :: chimera_fname
   ! mesa model filename
-  character (len=80), save :: mesa_fname
+  character (256), save :: mesa_fname
 
   ! flag for interpolation method (1=linear, 2=cubic spline)
   integer, save :: interp_method
@@ -18,9 +18,11 @@ module probdata_module
   real (dp_t), save :: max_radius
 
   ! inner boundary for chimera data
-  ! if r < min_radius, use rho_inner
-  real (dp_t), save :: min_radius
+  ! if r < radius_inner, use rho_inner, temp_inner
+  real (dp_t), save :: radius_inner
   real (dp_t), save :: rho_inner
+  real (dp_t), save :: temp_inner
+  integer, save :: i_inner
 
   logical, save :: do_particles
 

@@ -3,9 +3,9 @@
 #include <Gravity_F.H>
 
 namespace {
-    Real r_sync = 0.0; // 3.396887076073252e+09;
-    Real m_sync = 0.0; // 6.161259792375299e+33; // Enclosed mass inside r_sync
-    Real g_sync = 0.0; //-3.450357424906158e+07; // g(r_sync) gravitational acceleration at r_sync
+    Real r_sync =  1.464843750000000e+06;
+    Real m_sync =  2.495158470610086e+33; // Enclosed mass inside r_sync
+    Real g_sync = -7.759132347520069e+13; // g(r_sync)
 }
 
 void
@@ -84,9 +84,10 @@ Castro::problem_post_init ()
     Castro::point_mass = -(g_sync - grav[index]) * r_sync * r_sync / Gconst;
     //Castro::point_mass = m_sync - radial_mass[index];
 
-    set_pointmass(&point_mass);
+    //set_pointmass(&point_mass);
 
     if (ParallelDescriptor::IOProcessor()) {
+        std::cout.precision(15);
 	std::cout << "problem_post_init:: computed g(r) as   " << grav[index]
 		  << ".  Do NOT forget to update inputs file." << std::endl;
 	std::cout << "problem_post_init:: reset pointmass to " << point_mass

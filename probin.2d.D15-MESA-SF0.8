@@ -1,6 +1,6 @@
 &fortin
 
-  chimera_fname =  "chimera_07581_grid_1_01.h5"
+  chimera_fname =  "/Users/austin/Documents/research/chimera/D15-MESA-SF0.8/chimera_07581_grid_1_01.h5"
   mesa_fname = "s15_0.8_mesa.d"
 
   ! flag for interpolation method (1=linear, 2=spline)
@@ -42,6 +42,8 @@
 /
 
 &extern
+
+  use_eos_coulomb = .false.
 
 ! eos_file = "Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5"
 ! eos_file = "Hempel_SFHxEOS_rho234_temp180_ye60_version_1.1_20120817.h5"

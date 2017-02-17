@@ -8,7 +8,7 @@ DEBUG      = FALSE
 #USE_ASSERTION = FALSE
 #TEST          = TRUE
 
-DIM        = 2
+DIM        = 1
 
 COMP	   = gcc
 FCOMP	   = gfortran
@@ -38,8 +38,8 @@ USE_HDF5   = TRUE
 ifdef MICROPHYSICS_HOME
 
 # This sets the EOS directory in $(MICROPHYSICS_HOME)/eos
-EOS_dir     := helmholtz
-#EOS_dir     := stellarcollapse
+#EOS_dir     := helmholtz
+EOS_dir     := stellarcollapse
 
 # This sets the network directory in $(MICROPHYSICS_HOME)/networks
 #Network_dir := aprox21

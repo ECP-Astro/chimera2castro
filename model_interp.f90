@@ -81,8 +81,6 @@ contains
 
   subroutine interp1d_spline( x_in, f_in, x_out, f_out )
 
-    use bl_constants_module
-
     ! input variables
     real (dp_t), intent(in) :: x_in(:)
     real (dp_t), intent(in) :: f_in(:)
@@ -202,7 +200,6 @@ contains
 
   subroutine interp2d_spline( x_in, y_in, f_in, x_out, y_out, f_out )
 
-    use bl_constants_module
     use bl_error_module
     use bspline_module, only: db2ink, db2val
 
