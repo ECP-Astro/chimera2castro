@@ -5,7 +5,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use mesa_parser_module
   use bl_constants_module
   use bl_error_module
-  use bl_types
+  use bl_fort_module, only: rt => c_real
   use eos_module
   use parallel, only: parallel_IOProcessor
   use prob_params_module, only: center
@@ -16,12 +16,12 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   implicit none
   integer :: init, namlen
   integer :: name(namlen)
-  real (dp_t) :: problo(1), probhi(1)
+  real (rt) :: problo(1), probhi(1)
 
   integer :: untin,i,dir
-  real (dp_t) :: r, dr, dvol, volr, dvolr, gr
-  real (dp_t) :: mass_chim, mass_mesa, vol_chim, vol_mesa
-  real (dp_t) :: domega, point_mass, mass_inner
+  real (rt) :: r, dr, dvol, volr, dvolr, gr
+  real (rt) :: mass_chim, mass_mesa, vol_chim, vol_mesa
+  real (rt) :: domega, point_mass, mass_inner
 
   namelist /fortin/ chimera_fname
   namelist /fortin/ mesa_fname
@@ -264,7 +264,7 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
 
   use bl_constants_module
   use bl_error_module
-  use bl_types
+  use bl_fort_module, only: rt => c_real
   use fundamental_constants_module
   use eos_module
   use eos_type_module, only: minye, maxye
@@ -285,48 +285,48 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
   double precision :: state(state_l1:state_h1,nvar)
 
   ! local variables
-  real (dp_t) :: xcen(lo(1):hi(1))
+  real (rt) :: xcen(lo(1):hi(1))
 
-  real (dp_t) :: rho_i_chim(lo(1):hi(1))
-  real (dp_t) :: t_i_chim(lo(1):hi(1))
-  real (dp_t) :: p_i_chim(lo(1):hi(1))
-  real (dp_t) :: e_i_chim(lo(1):hi(1))
-  real (dp_t) :: s_i_chim(lo(1):hi(1))
-  real (dp_t) :: xn_i_chim(nspec,lo(1):hi(1))
-  real (dp_t) :: u_i_chim(lo(1):hi(1))
-  real (dp_t) :: v_i_chim(lo(1):hi(1))
-  real (dp_t) :: w_i_chim(lo(1):hi(1))
-  real (dp_t) :: ye_i_chim(lo(1):hi(1))
-  real (dp_t) :: a_aux_i_chim(lo(1):hi(1))
-  real (dp_t) :: z_aux_i_chim(lo(1):hi(1))
+  real (rt) :: rho_i_chim(lo(1):hi(1))
+  real (rt) :: t_i_chim(lo(1):hi(1))
+  real (rt) :: p_i_chim(lo(1):hi(1))
+  real (rt) :: e_i_chim(lo(1):hi(1))
+  real (rt) :: s_i_chim(lo(1):hi(1))
+  real (rt) :: xn_i_chim(nspec,lo(1):hi(1))
+  real (rt) :: u_i_chim(lo(1):hi(1))
+  real (rt) :: v_i_chim(lo(1):hi(1))
+  real (rt) :: w_i_chim(lo(1):hi(1))
+  real (rt) :: ye_i_chim(lo(1):hi(1))
+  real (rt) :: a_aux_i_chim(lo(1):hi(1))
+  real (rt) :: z_aux_i_chim(lo(1):hi(1))
 
-  real (dp_t) :: rho_i_mesa(lo(1):hi(1))
-  real (dp_t) :: t_i_mesa(lo(1):hi(1))
-  real (dp_t) :: xn_i_mesa(nspec,lo(1):hi(1))
-  real (dp_t) :: u_i_mesa(lo(1):hi(1))
-  real (dp_t) :: ye_i_mesa(lo(1):hi(1))
-  real (dp_t) :: a_aux_i_mesa(lo(1):hi(1))
-  real (dp_t) :: z_aux_i_mesa(lo(1):hi(1))
+  real (rt) :: rho_i_mesa(lo(1):hi(1))
+  real (rt) :: t_i_mesa(lo(1):hi(1))
+  real (rt) :: xn_i_mesa(nspec,lo(1):hi(1))
+  real (rt) :: u_i_mesa(lo(1):hi(1))
+  real (rt) :: ye_i_mesa(lo(1):hi(1))
+  real (rt) :: a_aux_i_mesa(lo(1):hi(1))
+  real (rt) :: z_aux_i_mesa(lo(1):hi(1))
 
-  real (dp_t) :: xg(nquad)
-  real (dp_t) :: rho_quad(nquad)
-  real (dp_t) :: t_quad(nquad)
-  real (dp_t) :: p_quad(nquad)
-  real (dp_t) :: e_quad(nquad)
-  real (dp_t) :: s_quad(nquad)
-  real (dp_t) :: u_quad(nquad)
-  real (dp_t) :: v_quad(nquad)
-  real (dp_t) :: w_quad(nquad)
-  real (dp_t) :: xn_quad(nquad)
-  real (dp_t) :: ye_quad(nquad)
-  real (dp_t) :: a_aux_quad(nquad)
-  real (dp_t) :: z_aux_quad(nquad)
+  real (rt) :: xg(nquad)
+  real (rt) :: rho_quad(nquad)
+  real (rt) :: t_quad(nquad)
+  real (rt) :: p_quad(nquad)
+  real (rt) :: e_quad(nquad)
+  real (rt) :: s_quad(nquad)
+  real (rt) :: u_quad(nquad)
+  real (rt) :: v_quad(nquad)
+  real (rt) :: w_quad(nquad)
+  real (rt) :: xn_quad(nquad)
+  real (rt) :: ye_quad(nquad)
+  real (rt) :: a_aux_quad(nquad)
+  real (rt) :: z_aux_quad(nquad)
 
   integer :: i, ii, n
 
   type (eos_t) :: eos_state
 
-! real (dp_t), parameter :: delta = 2.9296875d6
+! real (rt), parameter :: delta = 2.9296875d6
 
   do i = lo(1), hi(1)
     xcen(i) = xlo(1) + dx(1)*(dble(i-lo(1)) + half)

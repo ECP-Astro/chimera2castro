@@ -1,6 +1,6 @@
 module probdata_module
 
-  use bl_types
+  use bl_fort_module, only: rt => c_real
 
   ! chimera hdf5 filename
   character (256), save :: chimera_fname
@@ -15,13 +15,13 @@ module probdata_module
 
   ! max radius to use chimera data
   ! if r > max_radius, use mesa data
-  real (dp_t), save :: max_radius
+  real (rt), save :: max_radius
 
   ! inner boundary for chimera data
   ! if r < radius_inner, use rho_inner, temp_inner
-  real (dp_t), save :: radius_inner
-  real (dp_t), save :: rho_inner
-  real (dp_t), save :: temp_inner
+  real (rt), save :: radius_inner
+  real (rt), save :: rho_inner
+  real (rt), save :: temp_inner
   integer, save :: i_inner
 
   logical, save :: do_particles

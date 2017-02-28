@@ -5,7 +5,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use mesa_parser_module
   use bl_constants_module
   use bl_error_module
-  use bl_types
+  use bl_fort_module, only: rt => c_real
   use eos_module
   use parallel, only: parallel_IOProcessor
   use prob_params_module, only: center
@@ -16,12 +16,12 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   implicit none
   integer :: init, namlen
   integer :: name(namlen)
-  real (dp_t) :: problo(2), probhi(2)
+  real (rt) :: problo(2), probhi(2)
 
   integer :: untin,i,j,k,dir
-  real (dp_t) :: probhi_r, rcyl, zcyl, r, dr, dvol, volr, dvolr, gr
-  real (dp_t) :: mass_chim, mass_mesa, vol_chim, vol_mesa
-  real (dp_t) :: tmp1, tmp2, tmp3, domega
+  real (rt) :: probhi_r, rcyl, zcyl, r, dr, dvol, volr, dvolr, gr
+  real (rt) :: mass_chim, mass_mesa, vol_chim, vol_mesa
+  real (rt) :: tmp1, tmp2, tmp3, domega
 
   namelist /fortin/ chimera_fname
   namelist /fortin/ mesa_fname
@@ -227,7 +227,7 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
                        delta,xlo,xhi)
 
   use bl_error_module
-  use bl_types
+  use bl_fort_module, only: rt => c_real
   use fundamental_constants_module
   use eos_module
   use eos_type_module, only: minye, maxye
@@ -247,50 +247,50 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   double precision :: state(state_l1:state_h1,state_l2:state_h2,NVAR)
 
   ! local variables
-  real (dp_t) :: xcen(lo(1):hi(1))
-  real (dp_t) :: ycen(lo(2):hi(2))
-  real (dp_t) :: r(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: theta(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: xcen(lo(1):hi(1))
+  real (rt) :: ycen(lo(2):hi(2))
+  real (rt) :: r(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: theta(lo(1):hi(1),lo(2):hi(2))
 
-  real (dp_t) :: rho_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: t_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: p_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: xn_i_chim(nspec,lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: u_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: v_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: w_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: ye_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: a_aux_i_chim(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: z_aux_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: rho_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: t_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: p_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: xn_i_chim(nspec,lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: u_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: v_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: w_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: ye_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: a_aux_i_chim(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: z_aux_i_chim(lo(1):hi(1),lo(2):hi(2))
 
-  real (dp_t) :: rho_i_mesa(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: t_i_mesa(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: xn_i_mesa(nspec,lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: u_i_mesa(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: ye_i_mesa(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: a_aux_i_mesa(lo(1):hi(1),lo(2):hi(2))
-  real (dp_t) :: z_aux_i_mesa(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: rho_i_mesa(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: t_i_mesa(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: xn_i_mesa(nspec,lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: u_i_mesa(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: ye_i_mesa(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: a_aux_i_mesa(lo(1):hi(1),lo(2):hi(2))
+  real (rt) :: z_aux_i_mesa(lo(1):hi(1),lo(2):hi(2))
 
   integer :: i, ii, j, jj, n
 
-  real (dp_t) :: xg, yg
-  real (dp_t) :: rg(nquad,nquad)
-  real (dp_t) :: tg(nquad,nquad)
-  real (dp_t) :: rho_quad(nquad,nquad)
-  real (dp_t) :: t_quad(nquad,nquad)
-  real (dp_t) :: p_quad(nquad,nquad)
-  real (dp_t) :: u_quad(nquad,nquad)
-  real (dp_t) :: v_quad(nquad,nquad)
-  real (dp_t) :: w_quad(nquad,nquad)
-  real (dp_t) :: xn_quad(nquad,nquad)
-  real (dp_t) :: ye_quad(nquad,nquad)
-  real (dp_t) :: a_aux_quad(nquad,nquad)
-  real (dp_t) :: z_aux_quad(nquad,nquad)
+  real (rt) :: xg, yg
+  real (rt) :: rg(nquad,nquad)
+  real (rt) :: tg(nquad,nquad)
+  real (rt) :: rho_quad(nquad,nquad)
+  real (rt) :: t_quad(nquad,nquad)
+  real (rt) :: p_quad(nquad,nquad)
+  real (rt) :: u_quad(nquad,nquad)
+  real (rt) :: v_quad(nquad,nquad)
+  real (rt) :: w_quad(nquad,nquad)
+  real (rt) :: xn_quad(nquad,nquad)
+  real (rt) :: ye_quad(nquad,nquad)
+  real (rt) :: a_aux_quad(nquad,nquad)
+  real (rt) :: z_aux_quad(nquad,nquad)
 
   type (eos_t) :: eos_state
  
-  real (dp_t) :: drho
-  real (dp_t), parameter :: dsmooth = 1.0e6_dp_t
+  real (rt) :: drho
+  real (rt), parameter :: dsmooth = 1.0e6_rt
 
   ! determine coordinates in r-theta and quadrature points
   do j = lo(2), hi(2)

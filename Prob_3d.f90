@@ -18,10 +18,11 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   integer :: name(namlen)
   real (rt) :: problo(3), probhi(3)
 
-  integer :: untin,i,dir
-  real (rt) :: r, dr, dvol, volr, dvolr, gr
+  integer :: untin,i,j,k,dir
+  real (rt) :: probhi_r, r, dr, rlo, rhi, x, y, z, theta, phi
+  real (rt) :: dvol, volr, dvolr, gr
   real (rt) :: mass_chim, mass_mesa, vol_chim, vol_mesa
-  real (rt) :: domega, point_mass, mass_inner
+  real (rt) :: domega, domega_exclude, point_mass, mass_inner
 
   namelist /fortin/ chimera_fname
   namelist /fortin/ mesa_fname
@@ -369,11 +370,11 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
 
   ! determine coordinates in r-theta-phi
   do k = lo(3), hi(3)
-    zcen(k) = xlo(3) + delta(3)*(dble(k-lo(3)) + half) - center(3)
+    zcen(k) = xlo(3) + dx(3)*(dble(k-lo(3)) + half) - center(3)
     do j = lo(2), hi(2)
-      ycen(j) = xlo(2) + delta(2)*(dble(j-lo(2)) + half) - center(2)
+      ycen(j) = xlo(2) + dx(2)*(dble(j-lo(2)) + half) - center(2)
       do i = lo(1), hi(1)
-        xcen(i) = xlo(1) + delta(1)*(dble(i-lo(1)) + half) - center(1)
+        xcen(i) = xlo(1) + dx(1)*(dble(i-lo(1)) + half) - center(1)
         r(i,j,k) = sqrt( xcen(i)**2 + ycen(j)**2 + zcen(k)**2 )
         if ( r(i,j,k) <= zero ) then
           theta(i,j,k) = zero
@@ -396,11 +397,11 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
 
           ! calculate quadrature points
           do kk = 1, nquad
-            zg = zcen(k) + half*delta(3)*xquad(kk)
+            zg = zcen(k) + half*dx(3)*xquad(kk)
             do jj = 1, nquad
-              yg = ycen(j) + half*delta(2)*xquad(jj)
+              yg = ycen(j) + half*dx(2)*xquad(jj)
               do ii = 1, nquad
-                xg = xcen(i) + half*delta(1)*xquad(ii)
+                xg = xcen(i) + half*dx(1)*xquad(ii)
                 rg(ii,jj,kk) = sqrt( xg**2 + yg**2 + zg**2 )
                 if ( rg(ii,jj,kk) <= zero ) then
                   tg(ii,jj,kk) = zero
@@ -413,25 +414,25 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
             end do
           end do
 
-          call interp3d_chimera( xg, tg, pg, u_c_chim(:,:,:), u_quad )
-          call interp3d_chimera( xg, tg, pg, v_c_chim(:,:,:), v_quad )
-          call interp3d_chimera( xg, tg, pg, w_c_chim(:,:,:), w_quad )
-          call interp3d_chimera( xg, tg, pg, rho_c_chim(:,:,:), rho_quad )
-          call interp3d_chimera( xg, tg, pg, t_c_chim(:,:,:), t_quad )
-          call interp3d_chimera( xg, tg, pg, p_c_chim(:,:,:), p_quad )
+          call interp3d_chimera( rg, tg, pg, u_c_chim(:,:,:), u_quad )
+          call interp3d_chimera( rg, tg, pg, v_c_chim(:,:,:), v_quad )
+          call interp3d_chimera( rg, tg, pg, w_c_chim(:,:,:), w_quad )
+          call interp3d_chimera( rg, tg, pg, rho_c_chim(:,:,:), rho_quad )
+          call interp3d_chimera( rg, tg, pg, t_c_chim(:,:,:), t_quad )
+          call interp3d_chimera( rg, tg, pg, p_c_chim(:,:,:), p_quad )
           if ( trim(eos_name) == "stellarcollapse" ) then
-            call interp3d_chimera( xg, tg, pg, ei_c_chim(:,:,:), e_quad )
+            call interp3d_chimera( rg, tg, pg, ei_c_chim(:,:,:), e_quad )
           else
-            call interp3d_chimera( xg, tg, pg, et_c_chim(:,:,:), e_quad )
+            call interp3d_chimera( rg, tg, pg, et_c_chim(:,:,:), e_quad )
           end if
-          call interp3d_chimera( xg, tg, pg, s_c_chim(:,:,:), s_quad )
+          call interp3d_chimera( rg, tg, pg, s_c_chim(:,:,:), s_quad )
           do n = 1, nspec
-            call interp3d_chimera( xg, tg, pg, xn_c_chim(n,:,:,:), xn_quad )
+            call interp3d_chimera( rg, tg, pg, xn_c_chim(n,:,:,:), xn_quad )
             xn_i_chim(n,i,j,k) = quad_avg( wquad, xn_quad )
           end do
-          call interp3d_chimera( xg, tg, pg, ye_c_chim(:,:,:), ye_quad )
-          call interp3d_chimera( xg, tg, pg, a_aux_c_chim(:,:,:), a_aux_quad )
-          call interp3d_chimera( xg, tg, pg, z_aux_c_chim(:,:,:), z_aux_quad )
+          call interp3d_chimera( rg, tg, pg, ye_c_chim(:,:,:), ye_quad )
+          call interp3d_chimera( rg, tg, pg, a_aux_c_chim(:,:,:), a_aux_quad )
+          call interp3d_chimera( rg, tg, pg, z_aux_c_chim(:,:,:), z_aux_quad )
 
           u_i_chim(i,j,k) = quad_avg( wquad, u_quad )
           v_i_chim(i,j,k) = quad_avg( wquad, v_quad )
@@ -464,7 +465,7 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
     end if
     call interp3d_chimera( r, theta, phi, s_c_chim(:,:,:), s_i_chim )
     do n = 1, nspec
-      call interp3d_chimera( r, theta, phi, xn_c_chim(n,:,:,:), xn_i_chim(n,:) )
+      call interp3d_chimera( r, theta, phi, xn_c_chim(n,:,:,:), xn_i_chim(n,:,:,:) )
     end do
     call interp3d_chimera( r, theta, phi, ye_c_chim(:,:,:), ye_i_chim )
     call interp3d_chimera( r, theta, phi, a_aux_c_chim(:,:,:), a_aux_i_chim )

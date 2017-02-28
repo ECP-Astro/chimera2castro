@@ -1,6 +1,6 @@
 module hdf5_read_write
 
-  use bl_types
+  use bl_fort_module, only: rt => c_real
   use hdf5
   
   implicit none
@@ -143,7 +143,7 @@ module hdf5_read_write
     character(*), intent(in), optional          :: desc_option
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(1), intent(in)  :: datasize
-    real(dp_t), dimension(:), intent(in)        :: value
+    real(rt), dimension(:), intent(in)        :: value
     
     integer(hid_t)                              :: dataset_id
     integer(hid_t)                              :: dataspace_id
@@ -262,7 +262,7 @@ module hdf5_read_write
     character(*), intent(in), optional          :: desc_option
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(2), intent(in)  :: datasize
-    real(dp_t), dimension(:,:), intent(in)      :: value
+    real(rt), dimension(:,:), intent(in)      :: value
     
     integer(hid_t)                              :: dataset_id
     integer(hid_t)                              :: dataspace_id
@@ -382,7 +382,7 @@ module hdf5_read_write
     integer(hsize_t), dimension(2), intent(in)  :: global_datasize
     integer(hsize_t), dimension(2), intent(in)  :: local_datasize
     integer(hsize_t), dimension(2), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:), intent(in)      :: value
+    real(rt), dimension(:,:), intent(in)      :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    
@@ -469,7 +469,7 @@ module hdf5_read_write
     integer(hsize_t), dimension(3), intent(in)  :: global_datasize
     integer(hsize_t), dimension(3), intent(in)  :: local_datasize
     integer(hsize_t), dimension(3), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:,:), intent(in)    :: value
+    real(rt), dimension(:,:,:), intent(in)    :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    
@@ -556,7 +556,7 @@ module hdf5_read_write
     integer(hsize_t), dimension(4), intent(in)  :: global_datasize
     integer(hsize_t), dimension(4), intent(in)  :: local_datasize
     integer(hsize_t), dimension(4), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:,:,:), intent(in)  :: value
+    real(rt), dimension(:,:,:,:), intent(in)  :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    
@@ -643,7 +643,7 @@ module hdf5_read_write
     integer(hsize_t), dimension(5), intent(in)  :: global_datasize
     integer(hsize_t), dimension(5), intent(in)  :: local_datasize
     integer(hsize_t), dimension(5), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:,:,:,:), intent(in) :: value
+    real(rt), dimension(:,:,:,:,:), intent(in) :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    
@@ -828,7 +828,7 @@ module hdf5_read_write
     character(*), intent(in)                    :: name
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(1), intent(in)  :: datasize
-    real(dp_t), dimension(:), intent(out)       :: value
+    real(rt), dimension(:), intent(out)       :: value
     
     integer(hid_t)                              :: dataset_id
     integer                                     :: error
@@ -888,7 +888,7 @@ module hdf5_read_write
     character(*), intent(in)                    :: name
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(2), intent(in)  :: datasize
-    real(dp_t), dimension(:,:), intent(out)     :: value
+    real(rt), dimension(:,:), intent(out)     :: value
     
     integer(hid_t)                              :: dataset_id
     integer                                     :: error
@@ -910,7 +910,7 @@ module hdf5_read_write
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(2), intent(in)  :: datasize
     integer(hsize_t), dimension(2), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:), intent(out)     :: value
+    real(rt), dimension(:,:), intent(out)     :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    
@@ -948,7 +948,7 @@ module hdf5_read_write
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(3), intent(in)  :: datasize
     integer(hsize_t), dimension(3), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:,:), intent(out)   :: value
+    real(rt), dimension(:,:,:), intent(out)   :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    
@@ -986,7 +986,7 @@ module hdf5_read_write
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(4), intent(in)  :: datasize
     integer(hsize_t), dimension(4), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:,:,:), intent(out) :: value
+    real(rt), dimension(:,:,:,:), intent(out) :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    
@@ -1024,7 +1024,7 @@ module hdf5_read_write
     integer(hid_t)                              :: group_id
     integer(hsize_t), dimension(5), intent(in)  :: datasize
     integer(hsize_t), dimension(5), intent(in)  :: slab_offset
-    real(dp_t), dimension(:,:,:,:,:), intent(out) :: value
+    real(rt), dimension(:,:,:,:,:), intent(out) :: value
     
     integer(hid_t)                              :: filespace    
     integer(hid_t)                              :: memspace    

@@ -618,7 +618,7 @@ module mesa_parser_module
     use bl_constants_module
     use bl_error_module
     use interpolate_module, only: locate
-    use model_interp_module, only: interp3d_linear, interp3d_spline
+    use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
 
     ! input variables

@@ -5,8 +5,8 @@ module model_interp_module
 
   implicit none
 
-  integer, parameter :: kx = 3, ky = 3, iknot = 0
-  integer, parameter :: idx = 0, idy = 0
+  integer, parameter :: kx = 3, ky = 3, kz = 3, iknot = 0
+  integer, parameter :: idx = 0, idy = 0, idz = 0
 
   interface interp1d_linear
     module procedure interp1d_linear_vec
@@ -336,5 +336,69 @@ contains
 
     return
   end subroutine interp3d_linear
+
+  subroutine interp3d_spline( x_in, y_in, z_in, f_in, x_out, y_out, z_out, f_out )
+
+    use bl_error_module
+    use bspline_module, only: db3ink, db3val
+
+    ! input variables
+    real (rt), intent(in) :: x_in(:)
+    real (rt), intent(in) :: y_in(:)
+    real (rt), intent(in) :: z_in(:)
+    real (rt), intent(in) :: f_in(:,:,:)
+    real (rt), intent(in) :: x_out(:,:,:)
+    real (rt), intent(in) :: y_out(:,:,:)
+    real (rt), intent(in) :: z_out(:,:,:)
+
+    ! output variables
+    real (rt), intent(out) :: f_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    ! local variables
+    real (rt) :: tx(size(x_in)+kx)
+    real (rt) :: ty(size(y_in)+ky)
+    real (rt) :: tz(size(z_in)+kz)
+    real (rt) :: bcoef(size(x_in),size(y_in),size(z_in))
+
+    integer :: inbvx, inbvy, inbvz, iloy, iloz
+    integer :: nx, ny, nz
+    real (rt) :: x, y, z, fval
+    integer :: i, j, k, iflag
+
+    nx = size( x_in )
+    ny = size( y_in )
+    nz = size( z_in )
+
+    inbvx = 1
+    inbvy = 1
+    inbvz = 1
+    iloy = 1
+    iloz = 1
+
+    call db3ink( x_in, nx, y_in, ny, z_in, nz, f_in, kx, ky, kz, iknot, tx, ty, tz, bcoef, iflag )
+    if ( iflag /= 0 ) then
+      write(*,*) "error in db3ink: ", iflag
+      call bl_error("error in db3ink")
+    end if
+
+    do k = 1, size(x_out,3)
+      do j = 1, size(x_out,2)
+        do i = 1, size(x_out,1)
+          x = min( max( x_out(i,j,k), x_in(1) ), x_in(nx) )
+          y = min( max( y_out(i,j,k), y_in(1) ), y_in(ny) )
+          z = min( max( z_out(i,j,k), z_in(1) ), z_in(nz) )
+          call db3val( x, y, z, idx, idy, idz, tx, ty, tz, nx, ny, nz, kx, ky, kz, bcoef, &
+          &            fval, iflag, inbvx, inbvy, inbvz, iloy, iloz )
+          if ( iflag /= 0 ) then
+            write(*,*) "error in db3val: ", x, y, z, iflag
+            call bl_error("error in db3val")
+          end if
+          f_out(i,j,k) = fval
+        end do
+      end do
+    end do
+
+    return
+  end subroutine interp3d_spline
 
 end module model_interp_module
