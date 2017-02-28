@@ -3,9 +3,9 @@
 #include <Gravity_F.H>
 
 namespace {
-    Real r_sync =  1.464843750000000e+06;
-    Real m_sync =  2.495158470610086e+33; // Enclosed mass inside r_sync
-    Real g_sync = -7.759132347520069e+13; // g(r_sync)
+    Real r_sync =  1.914062500000000e+06;
+    Real m_sync =  2.670880848098030e+33; // Enclosed mass inside r_sync
+    Real g_sync = -4.865715441469519e+13; // g(r_sync)
 }
 
 void

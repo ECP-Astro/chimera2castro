@@ -1,5 +1,5 @@
 # ------------------  INPUTS TO MAIN PROGRAM  -------------------
-max_step = 120
+max_step = 600
 stop_time = 1.0e-1
 
 # PROBLEM SIZE & GEOMETRY
@@ -39,8 +39,8 @@ gravity.no_composite = 0                # default: 0
 castro.drdxfac = 1                      # default: 1
 castro.grav_source_type = 4             # default: 4
 
-castro.point_mass = -3.39347370712134e+32  # default: 0.0
-castro.point_mass_fix_solution = 1      # default: 0
+castro.point_mass = -1.72352397655796e+30 # default: 0.0
+castro.point_mass_fix_solution = 0      # default: 0
 
 # REACTIONS
 castro.react_T_max = 6.0d9              # default: 1.e200
@@ -105,7 +105,7 @@ amr.check_int       = 1000  # number of timesteps between checkpoints
 
 # PLOTFILES
 amr.plot_file       = plt_chimera_1d_2048_
-amr.plot_int        = 15
+amr.plot_int        = 75
 #amr.plot_per        = 1.25e-5
 amr.plot_vars       =density Temp phiGrav grav_x
 amr.derive_plot_vars=pressure entropy eint_e x_velocity

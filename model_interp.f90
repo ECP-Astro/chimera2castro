@@ -1,6 +1,6 @@
 module model_interp_module
 
-  use bl_types
+  use bl_fort_module, only: rt => c_real
   use bl_constants_module
 
   implicit none
@@ -19,15 +19,15 @@ contains
 
     ! input variables
     integer, intent(in) :: ix, ix_max
-    real (dp_t), intent(in) :: x_in(:)
-    real (dp_t), intent(in) :: f_in(:)
-    real (dp_t), intent(in) :: x_out
+    real (rt), intent(in) :: x_in(:)
+    real (rt), intent(in) :: f_in(:)
+    real (rt), intent(in) :: x_out
 
     ! output variables
-    real (dp_t), intent(out) :: f_out
+    real (rt), intent(out) :: f_out
 
     ! local variables
-    real (dp_t) :: dx0, dx1, dx
+    real (rt) :: dx0, dx1, dx
     integer :: j
 
     if ( ix < ix_max ) then
@@ -50,15 +50,15 @@ contains
 
     ! input variables
     integer, intent(in) :: ix(:), ix_max
-    real (dp_t), intent(in) :: x_in(:)
-    real (dp_t), intent(in) :: f_in(:)
-    real (dp_t), intent(in) :: x_out(:)
+    real (rt), intent(in) :: x_in(:)
+    real (rt), intent(in) :: f_in(:)
+    real (rt), intent(in) :: x_out(:)
 
     ! output variables
-    real (dp_t), intent(out) :: f_out(size(x_out))
+    real (rt), intent(out) :: f_out(size(x_out))
 
     ! local variables
-    real (dp_t) :: dx0, dx1, dx
+    real (rt) :: dx0, dx1, dx
     integer :: j
 
     do j = 1, size(x_out)
@@ -82,15 +82,15 @@ contains
   subroutine interp1d_spline( x_in, f_in, x_out, f_out )
 
     ! input variables
-    real (dp_t), intent(in) :: x_in(:)
-    real (dp_t), intent(in) :: f_in(:)
-    real (dp_t), intent(in) :: x_out(:)
+    real (rt), intent(in) :: x_in(:)
+    real (rt), intent(in) :: f_in(:)
+    real (rt), intent(in) :: x_out(:)
 
     ! output variables
-    real (dp_t), intent(out) :: f_out(size(x_out))
+    real (rt), intent(out) :: f_out(size(x_out))
 
     ! local variables
-    real (dp_t) :: fpp(size(x_in)), fval, fpval, fppval
+    real (rt) :: fpp(size(x_in)), fval, fpval, fppval
     integer :: j, nx
 
     nx = size(x_in)
@@ -110,19 +110,19 @@ contains
     ! input variables
     integer, intent(in) :: ix(:,:), ix_max
     integer, intent(in) :: iy(:,:), iy_max
-    real (dp_t), intent(in) :: x_in(:)
-    real (dp_t), intent(in) :: y_in(:)
-    real (dp_t), intent(in) :: f_in(:,:)
-    real (dp_t), intent(in) :: x_out(:,:)
-    real (dp_t), intent(in) :: y_out(:,:)
+    real (rt), intent(in) :: x_in(:)
+    real (rt), intent(in) :: y_in(:)
+    real (rt), intent(in) :: f_in(:,:)
+    real (rt), intent(in) :: x_out(:,:)
+    real (rt), intent(in) :: y_out(:,:)
 
     ! output variables
-    real (dp_t), intent(out) :: f_out(size(x_out,1),size(x_out,2))
+    real (rt), intent(out) :: f_out(size(x_out,1),size(x_out,2))
 
     ! local variables
-    real (dp_t) :: dx0, dx1, dx
-    real (dp_t) :: dy0, dy1, dy
-    real (dp_t) :: fxy0, fxy1
+    real (rt) :: dx0, dx1, dx
+    real (rt) :: dy0, dy1, dy
+    real (rt) :: fxy0, fxy1
     integer :: i, j
 
     do j = 1, size(x_out,2)
@@ -204,23 +204,23 @@ contains
     use bspline_module, only: db2ink, db2val
 
     ! input variables
-    real (dp_t), intent(in) :: x_in(:)
-    real (dp_t), intent(in) :: y_in(:)
-    real (dp_t), intent(in) :: f_in(:,:)
-    real (dp_t), intent(in) :: x_out(:,:)
-    real (dp_t), intent(in) :: y_out(:,:)
+    real (rt), intent(in) :: x_in(:)
+    real (rt), intent(in) :: y_in(:)
+    real (rt), intent(in) :: f_in(:,:)
+    real (rt), intent(in) :: x_out(:,:)
+    real (rt), intent(in) :: y_out(:,:)
 
     ! output variables
-    real (dp_t), intent(out) :: f_out(size(x_out,1),size(x_out,2))
+    real (rt), intent(out) :: f_out(size(x_out,1),size(x_out,2))
 
     ! local variables
-    real (dp_t) :: tx(size(x_in)+kx)
-    real (dp_t) :: ty(size(y_in)+ky)
-    real (dp_t) :: bcoef(size(x_in),size(y_in))
+    real (rt) :: tx(size(x_in)+kx)
+    real (rt) :: ty(size(y_in)+ky)
+    real (rt) :: bcoef(size(x_in),size(y_in))
 
     integer :: inbvx, inbvy, iloy
     integer :: nx, ny
-    real (dp_t) :: x, y, fval
+    real (rt) :: x, y, fval
     integer :: i, j, iflag
 
     nx = size( x_in )
@@ -251,5 +251,90 @@ contains
 
     return
   end subroutine interp2d_spline
+
+  subroutine interp3d_linear( ix, ix_max, iy, iy_max, iz, iz_max, &
+  &                           x_in, y_in, z_in, f_in, x_out, y_out, z_out, f_out )
+
+    ! input variables
+    integer, intent(in) :: ix(:,:,:), ix_max
+    integer, intent(in) :: iy(:,:,:), iy_max
+    integer, intent(in) :: iz(:,:,:), iz_max
+    real (rt), intent(in) :: x_in(:)
+    real (rt), intent(in) :: y_in(:)
+    real (rt), intent(in) :: z_in(:)
+    real (rt), intent(in) :: f_in(:,:,:)
+    real (rt), intent(in) :: x_out(:,:,:)
+    real (rt), intent(in) :: y_out(:,:,:)
+    real (rt), intent(in) :: z_out(:,:,:)
+
+    ! output variables
+    real (rt), intent(out) :: f_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    ! local variables
+    integer :: ix0, iy0, iz0
+    integer :: ix1, iy1, iz1
+    real (rt) :: dx, dy, dz
+    real (rt) :: c(8), d(8)
+    integer :: i, j, k
+
+    do k = 1, size(x_out,3)
+      do j = 1, size(x_out,2)
+        do i = 1, size(x_out,1)
+          ix0 = max( ix(i,j,k)  , 1 )
+          ix1 = min( ix(i,j,k)+1, ix_max )
+          if ( ix1 > ix0 ) then
+            dx = ( x_out(i,j,k) - x_in(ix0) ) / ( x_in(ix1) - x_in(ix0) )
+          else
+            dx = zero
+          end if
+
+          iy0 = max( iy(i,j,k)  , 1 )
+          iy1 = min( iy(i,j,k)+1, iy_max )
+          if ( iy1 > iy0 ) then
+            dy = ( y_out(i,j,k) - y_in(iy0) ) / ( y_in(iy1) - y_in(iy0) )
+          else
+            dy = zero
+          end if
+
+          iz0 = max( iz(i,j,k)  , 1 )
+          iz1 = min( iz(i,j,k)+1, iz_max )
+          if ( iz1 > iz0 ) then
+            dz = ( z_out(i,j,k) - z_in(iz0) ) / ( z_in(iz1) - z_in(iz0) )
+          else
+            dz = zero
+          end if
+
+          d(1) = one
+          d(2) = dx
+          d(3) = dy
+          d(4) = dz
+          d(5) = dx*dy
+          d(6) = dx*dz
+          d(7) = dy*dz
+          d(8) = dx*dy*dz
+
+          c(1) = f_in(ix0,iy0,iz0)
+          c(2) = f_in(ix1,iy0,iz0) - f_in(ix0,iy0,iz0)
+          c(3) = f_in(ix0,iy1,iz0) - f_in(ix0,iy0,iz0)
+          c(4) = f_in(ix0,iy0,iz1) - f_in(ix0,iy0,iz0)
+          c(5) = f_in(ix1,iy1,iz0) - f_in(ix0,iy1,iz0) + &
+                 f_in(ix0,iy0,iz0) - f_in(ix1,iy0,iz0)
+          c(6) = f_in(ix1,iy0,iz1) - f_in(ix0,iy0,iz1) + &
+                 f_in(ix0,iy0,iz0) - f_in(ix1,iy0,iz0)
+          c(7) = f_in(ix0,iy1,iz1) - f_in(ix0,iy0,iz1) + &
+                 f_in(ix0,iy0,iz0) - f_in(ix0,iy1,iz0)
+          c(8) = f_in(ix1,iy1,iz1) - f_in(ix0,iy1,iz1) + &
+                 f_in(ix0,iy0,iz1) - f_in(ix1,iy0,iz1) + &
+                 f_in(ix0,iy1,iz0) - f_in(ix1,iy1,iz0) + &
+                 f_in(ix1,iy0,iz0) - f_in(ix0,iy0,iz0)
+
+          f_out(i,j,k) = sum( d*c )
+
+        end do
+      end do
+    end do
+
+    return
+  end subroutine interp3d_linear
 
 end module model_interp_module

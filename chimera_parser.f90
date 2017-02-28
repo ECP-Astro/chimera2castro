@@ -8,7 +8,7 @@ module chimera_parser_module
 
   use parallel, only: parallel_IOProcessor
   use network
-  use bl_types
+  use bl_fort_module, only: rt => c_real
   use hdf5_read_write
   use hdf5
 
@@ -27,74 +27,74 @@ module chimera_parser_module
   integer, save :: kmin_chim, kmax_chim
 
   ! grid coordinates
-  real (dp_t), allocatable, save :: x_e_chim(:), dx_e_chim(:)
-  real (dp_t), allocatable, save :: y_e_chim(:), dy_e_chim(:)
-  real (dp_t), allocatable, save :: z_e_chim(:), dz_e_chim(:)
-  real (dp_t), allocatable, save :: x_c_chim(:), dx_c_chim(:)
-  real (dp_t), allocatable, save :: y_c_chim(:), dy_c_chim(:)
-  real (dp_t), allocatable, save :: z_c_chim(:), dz_c_chim(:) 
+  real (rt), allocatable, save :: x_e_chim(:), dx_e_chim(:)
+  real (rt), allocatable, save :: y_e_chim(:), dy_e_chim(:)
+  real (rt), allocatable, save :: z_e_chim(:), dz_e_chim(:)
+  real (rt), allocatable, save :: x_c_chim(:), dx_c_chim(:)
+  real (rt), allocatable, save :: y_c_chim(:), dy_c_chim(:)
+  real (rt), allocatable, save :: z_c_chim(:), dz_c_chim(:)
 
-  real (dp_t), allocatable, save :: volx_e_chim(:), dvolx_e_chim(:)
-  real (dp_t), allocatable, save :: voly_e_chim(:), dvoly_e_chim(:)
-  real (dp_t), allocatable, save :: volz_e_chim(:), dvolz_e_chim(:)
-  real (dp_t), allocatable, save :: volx_c_chim(:), dvolx_c_chim(:)
-  real (dp_t), allocatable, save :: voly_c_chim(:), dvoly_c_chim(:)
-  real (dp_t), allocatable, save :: volz_c_chim(:), dvolz_c_chim(:)
+  real (rt), allocatable, save :: volx_e_chim(:), dvolx_e_chim(:)
+  real (rt), allocatable, save :: voly_e_chim(:), dvoly_e_chim(:)
+  real (rt), allocatable, save :: volz_e_chim(:), dvolz_e_chim(:)
+  real (rt), allocatable, save :: volx_c_chim(:), dvolx_c_chim(:)
+  real (rt), allocatable, save :: voly_c_chim(:), dvoly_c_chim(:)
+  real (rt), allocatable, save :: volz_c_chim(:), dvolz_c_chim(:)
 
-  real (dp_t), allocatable, save :: domega_chim(:,:)
-  real (dp_t), allocatable, save :: dvol_e_chim(:,:,:)
-  real (dp_t), allocatable, save :: dmass_e_chim(:,:,:)
-  real (dp_t), save :: omega_chim
+  real (rt), allocatable, save :: domega_chim(:,:)
+  real (rt), allocatable, save :: dvol_e_chim(:,:,:)
+  real (rt), allocatable, save :: dmass_e_chim(:,:,:)
+  real (rt), save :: omega_chim
 
   ! time data
-  real (dp_t), save :: time_chim, t_bounce
+  real (rt), save :: time_chim, t_bounce
 
   ! fluid velocities
-  real (dp_t), allocatable, save :: u_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: v_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: w_c_chim(:,:,:)
+  real (rt), allocatable, save :: u_c_chim(:,:,:)
+  real (rt), allocatable, save :: v_c_chim(:,:,:)
+  real (rt), allocatable, save :: w_c_chim(:,:,:)
 
   ! thermo data
-  real (dp_t), allocatable, save :: rho_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: t_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: ye_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: p_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: ei_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: et_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: eb_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: em_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: s_c_chim(:,:,:)
+  real (rt), allocatable, save :: rho_c_chim(:,:,:)
+  real (rt), allocatable, save :: t_c_chim(:,:,:)
+  real (rt), allocatable, save :: ye_c_chim(:,:,:)
+  real (rt), allocatable, save :: p_c_chim(:,:,:)
+  real (rt), allocatable, save :: ei_c_chim(:,:,:)
+  real (rt), allocatable, save :: et_c_chim(:,:,:)
+  real (rt), allocatable, save :: eb_c_chim(:,:,:)
+  real (rt), allocatable, save :: em_c_chim(:,:,:)
+  real (rt), allocatable, save :: s_c_chim(:,:,:)
 
-  real (dp_t), allocatable, save :: rhobar_c_chim(:)
-  real (dp_t), allocatable, save :: tbar_c_chim(:)
+  real (rt), allocatable, save :: rhobar_c_chim(:)
+  real (rt), allocatable, save :: tbar_c_chim(:)
 
   ! gravity data
-  real (dp_t), allocatable, save :: gravx_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: gravy_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: gravz_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: gravx_c_avg_chim(:)
+  real (rt), allocatable, save :: gravx_c_chim(:,:,:)
+  real (rt), allocatable, save :: gravy_c_chim(:,:,:)
+  real (rt), allocatable, save :: gravz_c_chim(:,:,:)
+  real (rt), allocatable, save :: gravx_c_avg_chim(:)
 
   ! nuclei data
-  real (dp_t), allocatable, save :: a_nuc_chim(:)
-  real (dp_t), allocatable, save :: z_nuc_chim(:)
-  real (dp_t), allocatable, save :: mex_nuc_chim(:)
-  real (dp_t), allocatable, save :: be_nuc_chim(:)
+  real (rt), allocatable, save :: a_nuc_chim(:)
+  real (rt), allocatable, save :: z_nuc_chim(:)
+  real (rt), allocatable, save :: mex_nuc_chim(:)
+  real (rt), allocatable, save :: be_nuc_chim(:)
   character (5), allocatable, save :: name_nuc_chim(:)
 
   ! composition data
-  real (dp_t), allocatable, save :: xn_read(:,:,:,:)
-  real (dp_t), allocatable, save :: xn_c_chim(:,:,:,:)
+  real (rt), allocatable, save :: xn_read(:,:,:,:)
+  real (rt), allocatable, save :: xn_c_chim(:,:,:,:)
   integer,     allocatable, save :: nse_c_chim(:,:,:)
 
   ! representative heavy/auxiliary data
-  real (dp_t), allocatable, save :: a_aux_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: z_aux_c_chim(:,:,:)
-  real (dp_t), allocatable, save :: be_aux_c_chim(:,:,:)
+  real (rt), allocatable, save :: a_aux_c_chim(:,:,:)
+  real (rt), allocatable, save :: z_aux_c_chim(:,:,:)
+  real (rt), allocatable, save :: be_aux_c_chim(:,:,:)
 
   ! particle data
-  real (dp_t), allocatable, save :: px_chim(:)
-  real (dp_t), allocatable, save :: py_chim(:)
-  real (dp_t), allocatable, save :: pz_chim(:)
+  real (rt), allocatable, save :: px_chim(:)
+  real (rt), allocatable, save :: py_chim(:)
+  real (rt), allocatable, save :: pz_chim(:)
 
   ! chimera_initialized will be .true. once the model is read in and the
   ! model data arrays are initialized and filled
@@ -163,7 +163,7 @@ contains
     use probdata_module
 
     ! local variables
-    real (dp_t) :: d_read(1)
+    real (rt) :: d_read(1)
 
     integer :: array_dimensions(3)
     integer :: index_bounds(2)
@@ -175,7 +175,7 @@ contains
     integer :: net_to_castro(nspec)
     integer, allocatable :: net_in_castro(:)
 
-    real (dp_t) :: dx, dvol
+    real (rt) :: dx, dvol
 
     ! open mesh group
     call h5gopen_f(file_id, '/mesh', group_id, ierr)
@@ -410,8 +410,8 @@ contains
     call read_1d_slab('m_ex_nuc', mex_nuc_chim, group_id, datasize1d)
 
     ! binding energy
-    be_nuc_chim(1:nnc_chim-1) = z_nuc_chim(1:nnc_chim-1)*7.2889705_dp_t + &
-    &                           (a_nuc_chim(1:nnc_chim-1)-z_nuc_chim(1:nnc_chim-1))*8.0713171_dp_t - &
+    be_nuc_chim(1:nnc_chim-1) = z_nuc_chim(1:nnc_chim-1)*7.2889705_rt + &
+    &                           (a_nuc_chim(1:nnc_chim-1)-z_nuc_chim(1:nnc_chim-1))*8.0713171_rt - &
     &                           mex_nuc_chim(1:nnc_chim-1)
     
     ! read nuclei names
@@ -480,7 +480,7 @@ contains
     em_c_chim(:,:,:) = - ( m_n - m_p - m_e ) * ye_c_chim(:,:,:) * c_light * c_light * n_A + eb_c_chim(:,:,:)
 
     ! remove rest mass energy and constant offset from internal energy
-    et_c_chim(:,:,:) = ei_c_chim(:,:,:) - em_c_chim(:,:,:) - 8.9_dp_t * MeV2eV * ev2erg * n_A
+    et_c_chim(:,:,:) = ei_c_chim(:,:,:) - em_c_chim(:,:,:) - 8.9_rt * MeV2eV * ev2erg * n_A
 
     ! close abundance group
     call h5gclose_f(group_id, ierr)
@@ -613,9 +613,9 @@ contains
     integer, intent(in) :: nright       ! right boundary type
 
     ! output variables
-    real (dp_t), intent(inout) :: xag(nmin-6:nmax+7)    ! grid edges
-    real (dp_t), intent(inout) :: xcg(nmin-6:nmax+6)    ! grid centers
-    real (dp_t), intent(inout) :: dxg(nmin-6:nmax+6)    ! grid widths
+    real (rt), intent(inout) :: xag(nmin-6:nmax+7)    ! grid edges
+    real (rt), intent(inout) :: xcg(nmin-6:nmax+6)    ! grid centers
+    real (rt), intent(inout) :: dxg(nmin-6:nmax+6)    ! grid widths
 
     ! local variables
     integer :: n        ! zone index
@@ -682,18 +682,18 @@ contains
     use probdata_module, only: interp_method
 
     ! input variables
-    real (dp_t), intent(in) :: x_out(:)
-    real (dp_t), intent(in) :: state_chim(:)
+    real (rt), intent(in) :: x_out(:)
+    real (rt), intent(in) :: state_chim(:)
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(x_out))
+    real (rt), intent(out) :: state_out(size(x_out))
 
     ! local variables
     integer :: ix(size(x_out))
     integer :: ix_max
 
-    real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: volx_out(size(x_out))
+    real (rt) :: dvol1, dvol2
+    real (rt) :: volx_out(size(x_out))
 
     integer :: i, n
 
@@ -730,12 +730,12 @@ contains
     use probdata_module, only: interp_method
 
     ! input variables
-    real (dp_t), intent(in) :: x_out(:,:)
-    real (dp_t), intent(in) :: y_out(:,:)
-    real (dp_t), intent(in) :: state_chim(:,:)
+    real (rt), intent(in) :: x_out(:,:)
+    real (rt), intent(in) :: y_out(:,:)
+    real (rt), intent(in) :: state_chim(:,:)
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(x_out,1),size(x_out,2))
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2))
 
     ! local variables
     integer :: ix(size(x_out,1),size(x_out,2))
@@ -744,10 +744,10 @@ contains
     integer :: iy(size(x_out,1),size(x_out,2))
     integer :: iy_max
 
-    real (dp_t) :: volx_out(size(x_out,1),size(x_out,2))
-    real (dp_t) :: voly_out(size(x_out,1),size(x_out,2))
+    real (rt) :: volx_out(size(x_out,1),size(x_out,2))
+    real (rt) :: voly_out(size(x_out,1),size(x_out,2))
 
-    real (dp_t) :: dvol1, dvol2
+    real (rt) :: dvol1, dvol2
 
     integer :: i, j, n
 
@@ -802,12 +802,12 @@ contains
     use quadrature_module, only: wquad, quad_avg
 
     ! input variables
-    real (dp_t), intent(in) :: x_out(:,:,:,:)
-    real (dp_t), intent(in) :: y_out(:,:,:,:)
-    real (dp_t), intent(in) :: state_chim(:,:)
+    real (rt), intent(in) :: x_out(:,:,:,:)
+    real (rt), intent(in) :: y_out(:,:,:,:)
+    real (rt), intent(in) :: state_chim(:,:)
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(x_out,3),size(x_out,4))
+    real (rt), intent(out) :: state_out(size(x_out,3),size(x_out,4))
 
     ! local variables
     integer :: ix(size(x_out,1),size(x_out,2))
@@ -816,12 +816,12 @@ contains
     integer :: iy(size(x_out,1),size(x_out,2))
     integer :: iy_max
 
-    real (dp_t) :: volx_quad(size(x_out,1),size(x_out,2))
-    real (dp_t) :: voly_quad(size(x_out,1),size(x_out,2))
+    real (rt) :: volx_quad(size(x_out,1),size(x_out,2))
+    real (rt) :: voly_quad(size(x_out,1),size(x_out,2))
 
 
-    real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: state_quad(size(x_out,1),size(x_out,1))
+    real (rt) :: dvol1, dvol2
+    real (rt) :: state_quad(size(x_out,1),size(x_out,1))
 
     integer :: i, ii, j, jj, n
 
@@ -883,5 +883,97 @@ contains
 
     return
   end subroutine interp2d_quad_chimera
+
+  subroutine interp3d_chimera( x_out, y_out, z_out, state_chim, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp3d_linear, interp3d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:,:,:)
+    real (rt), intent(in) :: y_out(:,:,:)
+    real (rt), intent(in) :: z_out(:,:,:)
+    real (rt), intent(in) :: state_chim(:,:,:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    ! local variables
+    integer :: ix(size(x_out,1),size(x_out,2),size(x_out,3))
+    integer :: ix_max
+
+    integer :: iy(size(x_out,1),size(x_out,2),size(x_out,3))
+    integer :: iy_max
+
+    integer :: iz(size(x_out,1),size(x_out,2),size(x_out,3))
+    integer :: iz_max
+
+    real (rt) :: volx_out(size(x_out,1),size(x_out,2),size(x_out,3))
+    real (rt) :: voly_out(size(x_out,1),size(x_out,2),size(x_out,3))
+    real (rt) :: volz_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    real (rt) :: dvol1, dvol2
+
+    integer :: i, j, k, n
+
+    volx_out   = third * x_out**3
+    voly_out = one - cos( y_out )
+    volz_out = z_out
+    ix_max = imax_chim
+    iy_max = jmax_chim
+    iz_max = kmax_chim
+
+    if ( interp_method == 1 ) then
+
+      ix = 0
+      iy = 0
+      iz = 0
+      do k = 1, size(x_out,3)
+        do j = 1, size(x_out,2)
+          do i = 1, size(x_out,1)
+            if ( volx_out(i,j,k) <= volx_c_chim(1) ) then
+              ix(i,j,k) = 0
+            else if ( volx_out(i,j,k) >= volx_c_chim(ix_max) ) then
+              ix(i,j,k) = ix_max
+            else
+              ix(i,j,k) = locate( volx_out(i,j,k), ix_max, volx_c_chim ) - 1
+            end if
+            
+            if ( voly_out(i,j,k) <= voly_c_chim(1) ) then
+              iy(i,j,k) = 0
+            else if ( voly_out(i,j,k) >= voly_c_chim(iy_max) ) then
+              iy(i,j,k) = iy_max
+            else
+              iy(i,j,k) = locate( voly_out(i,j,k), iy_max, voly_c_chim ) - 1
+            end if
+
+            if ( volz_out(i,j,k) <= volz_c_chim(1) ) then
+              iz(i,j,k) = 0
+            else if ( volz_out(i,j,k) >= volz_c_chim(iz_max) ) then
+              iz(i,j,k) = iz_max
+            else
+              iz(i,j,k) = locate( volz_out(i,j,k), iz_max, volz_c_chim ) - 1
+            end if
+          end do
+        end do
+      end do
+
+      call interp3d_linear( ix, ix_max, iy, iy_max, iz, iz_max, &
+      &                     volx_c_chim, voly_c_chim, volz_c_chim, state_chim, &
+      &                     volx_out, voly_out, volz_out, state_out )
+
+!   else if ( interp_method == 2 ) then
+!     call interp3d_spline( volx_c_chim(1:ix_max), voly_c_chim(1:iy_max), volz_c_chim(1:iz_max), &
+!     &                     state_chim(1:ix_max,1:iy_max,1:iz_max), &
+!     &                     volx_out, voly_out, volz_out, state_out )
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp3d_chimera
 
 end module chimera_parser_module

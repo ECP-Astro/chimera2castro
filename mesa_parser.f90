@@ -1,35 +1,35 @@
 module mesa_parser_module
 
   use parallel, only: parallel_IOProcessor
-  use bl_types
+  use bl_fort_module, only: rt => c_real
 
   implicit none
 
   integer, save :: nx_mesa, nnc_mesa
   integer, save :: imin_mesa, imax_mesa
 
-  real (dp_t), allocatable, save :: x_e_mesa(:)
-  real (dp_t), allocatable, save :: dx_e_mesa(:)
-  real (dp_t), allocatable, save :: volx_e_mesa(:)
-  real (dp_t), allocatable, save :: volx_c_mesa(:)
-  real (dp_t), allocatable, save :: dvolx_e_mesa(:)
-  real (dp_t), allocatable, save :: dvolx_c_mesa(:)
-  real (dp_t), allocatable, save :: dvol_e_mesa(:)
-  real (dp_t), allocatable, save :: dmass_e_mesa(:)
+  real (rt), allocatable, save :: x_e_mesa(:)
+  real (rt), allocatable, save :: dx_e_mesa(:)
+  real (rt), allocatable, save :: volx_e_mesa(:)
+  real (rt), allocatable, save :: volx_c_mesa(:)
+  real (rt), allocatable, save :: dvolx_e_mesa(:)
+  real (rt), allocatable, save :: dvolx_c_mesa(:)
+  real (rt), allocatable, save :: dvol_e_mesa(:)
+  real (rt), allocatable, save :: dmass_e_mesa(:)
 
-  real (dp_t), allocatable, save :: u_c_mesa(:)
-  real (dp_t), allocatable, save :: rho_c_mesa(:)
-  real (dp_t), allocatable, save :: t_c_mesa(:)
-  real (dp_t), allocatable, save :: ye_c_mesa(:)
+  real (rt), allocatable, save :: u_c_mesa(:)
+  real (rt), allocatable, save :: rho_c_mesa(:)
+  real (rt), allocatable, save :: t_c_mesa(:)
+  real (rt), allocatable, save :: ye_c_mesa(:)
 
-  real (dp_t), allocatable, save :: xn_c_mesa(:,:)
-  real (dp_t), allocatable, save :: a_nuc_mesa(:)
-  real (dp_t), allocatable, save :: z_nuc_mesa(:)
-  real (dp_t), allocatable, save :: be_nuc_mesa(:)
+  real (rt), allocatable, save :: xn_c_mesa(:,:)
+  real (rt), allocatable, save :: a_nuc_mesa(:)
+  real (rt), allocatable, save :: z_nuc_mesa(:)
+  real (rt), allocatable, save :: be_nuc_mesa(:)
   character(len=5), allocatable, save :: name_nuc_mesa(:)
 
-  real (dp_t), allocatable, save :: a_aux_c_mesa(:)
-  real (dp_t), allocatable, save :: z_aux_c_mesa(:)
+  real (rt), allocatable, save :: a_aux_c_mesa(:)
+  real (rt), allocatable, save :: z_aux_c_mesa(:)
   
   contains
 
@@ -45,17 +45,17 @@ module mesa_parser_module
     character(len=1600)      :: line           ! read line for structure data
 
     integer                  :: zone_read      ! read in zone number
-    real (dp_t)              :: lnrho_read     ! read in ln(density) [g cm^{-3}]
-    real (dp_t)              :: lnt_read       ! read in ln(temperature) [k]
-    real (dp_t)              :: lnr_read       ! read in ln(radius) [cm]
-    real (dp_t)              :: u_read         ! read in velocity [cm s^{-1}]
-    real (dp_t), allocatable :: xn_read(:)     ! read in progenitor composition array
+    real (rt)              :: lnrho_read     ! read in ln(density) [g cm^{-3}]
+    real (rt)              :: lnt_read       ! read in ln(temperature) [k]
+    real (rt)              :: lnr_read       ! read in ln(radius) [cm]
+    real (rt)              :: u_read         ! read in velocity [cm s^{-1}]
+    real (rt), allocatable :: xn_read(:)     ! read in progenitor composition array
 
-    real (dp_t) :: dum1    ! dummy variable
-    real (dp_t) :: dum2    ! dummy variable
-    real (dp_t) :: dum3    ! dummy variable
+    real (rt) :: dum1    ! dummy variable
+    real (rt) :: dum2    ! dummy variable
+    real (rt) :: dum3    ! dummy variable
 
-    real (dp_t) :: dr, dvol
+    real (rt) :: dr, dvol
 
     integer :: itmp(nspec)
     integer :: net_to_castro(nspec)
@@ -330,8 +330,8 @@ module mesa_parser_module
     logical              :: digit     ! determine if string is a number
     logical              :: begin     ! determine start of mass table
 
-    real (dp_t)          :: a_nuc(nucnum), z_nuc(nucnum), be_nuc(nucnum)
-    real (dp_t)          :: a_nuc_tmp, be_nuc_tmp
+    real (rt)          :: a_nuc(nucnum), z_nuc(nucnum), be_nuc(nucnum)
+    real (rt)          :: a_nuc_tmp, be_nuc_tmp
     integer              :: ia_nuc, name_len
     integer              :: i,j,k   ! loop variables
     integer              :: inuc
@@ -346,7 +346,7 @@ module mesa_parser_module
     integer           :: nz, ni, zi, ai
     character(len=3)  :: el
     character(len=4)  :: oi
-    real (dp_t)       :: binding
+    real (rt)       :: binding
     character(len=11) :: binding_r
 
     integer           :: lun_table
@@ -511,7 +511,7 @@ module mesa_parser_module
     return
   end subroutine nucaz_from_name
 
-  subroutine interp1d_mesa( x_out, state_in, state_out )
+  subroutine interp1d_mesa( x_out, state_mesa, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -520,18 +520,18 @@ module mesa_parser_module
     use probdata_module, only: interp_method
 
     ! input variables
-    real (dp_t), intent(in) :: x_out(:)
-    real (dp_t), intent(in) :: state_in(:)
+    real (rt), intent(in) :: x_out(:)
+    real (rt), intent(in) :: state_mesa(:)
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(x_out))
+    real (rt), intent(out) :: state_out(size(x_out))
 
     ! local variables
     integer :: ix(size(x_out))
     integer :: ix_max
 
-    real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: volx_out(size(x_out))
+    real (rt) :: dvol1, dvol2
+    real (rt) :: volx_out(size(x_out))
 
     integer :: i, j, n
 
@@ -550,9 +550,9 @@ module mesa_parser_module
           ix(i) = locate( volx_out(i), ix_max, volx_c_mesa ) - 1
         end if
       end do
-      call interp1d_linear( ix, ix_max, volx_c_mesa, state_in, volx_out, state_out )
+      call interp1d_linear( ix, ix_max, volx_c_mesa, state_mesa, volx_out, state_out )
     else if ( interp_method == 2 ) then
-      call interp1d_spline( volx_c_mesa, state_in, volx_out, state_out )
+      call interp1d_spline( volx_c_mesa, state_mesa, volx_out, state_out )
     else
       call bl_error("invalid value for interp_method")
     end if
@@ -560,7 +560,7 @@ module mesa_parser_module
     return
   end subroutine interp1d_mesa
 
-  subroutine interp2d_mesa( x_out, state_in, state_out )
+  subroutine interp2d_mesa( x_out, state_mesa, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -569,18 +569,18 @@ module mesa_parser_module
     use probdata_module, only: interp_method
 
     ! input variables
-    real (dp_t), intent(in) :: x_out(:,:)
-    real (dp_t), intent(in) :: state_in(:)
+    real (rt), intent(in) :: x_out(:,:)
+    real (rt), intent(in) :: state_mesa(:)
 
     ! output variables
-    real (dp_t), intent(out) :: state_out(size(x_out,1),size(x_out,2))
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2))
 
     ! local variables
     integer :: ix(size(x_out,1))
     integer :: ix_max
 
-    real (dp_t) :: dvol1, dvol2
-    real (dp_t) :: volx_out(size(x_out,1),size(x_out,2))
+    real (rt) :: dvol1, dvol2
+    real (rt) :: volx_out(size(x_out,1),size(x_out,2))
 
     integer :: i, j, n
 
@@ -600,11 +600,11 @@ module mesa_parser_module
             ix(i) = locate( volx_out(i,j), ix_max, volx_c_mesa ) - 1
           end if
         end do
-        call interp1d_linear( ix, ix_max, volx_c_mesa, state_in, volx_out(:,j), state_out(:,j) )
+        call interp1d_linear( ix, ix_max, volx_c_mesa, state_mesa, volx_out(:,j), state_out(:,j) )
       end do
     else if ( interp_method == 2 ) then
       do j = 1, size(x_out,2)
-        call interp1d_spline( volx_c_mesa, state_in, volx_out(:,j), state_out(:,j) )
+        call interp1d_spline( volx_c_mesa, state_mesa, volx_out(:,j), state_out(:,j) )
       end do
     else
       call bl_error("invalid value for interp_method")
@@ -612,5 +612,61 @@ module mesa_parser_module
 
     return
   end subroutine interp2d_mesa
+
+  subroutine interp3d_mesa( x_out, state_mesa, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp3d_linear, interp3d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:,:,:)
+    real (rt), intent(in) :: state_mesa(:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    ! local variables
+    integer :: ix(size(x_out,1))
+    integer :: ix_max
+
+    real (rt) :: volx_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    integer :: i, j, k
+
+    volx_out   = third * x_out**3
+
+    if ( interp_method == 1 ) then
+
+      ix_max = imax_mesa
+      do k = 1, size(x_out,3)
+        do j = 1, size(x_out,2)
+          ix(:) = 1
+          do i = 1, size(x_out,1)
+            if ( volx_out(i,j,k) <= volx_c_mesa(1) ) then
+              ix(i) = 0
+            else if ( volx_out(i,j,k) >= volx_c_mesa(ix_max) ) then
+              ix(i) = ix_max
+            else
+              ix(i) = locate( volx_out(i,j,k), ix_max, volx_c_mesa ) - 1
+            end if
+          end do
+          call interp1d_linear( ix, ix_max, volx_c_mesa, state_mesa, volx_out(:,j,k), state_out(:,j,k) )
+        end do
+      end do
+    else if ( interp_method == 2 ) then
+      do k = 1, size(x_out,3)
+        do j = 1, size(x_out,2)
+          call interp1d_spline( volx_c_mesa, state_mesa, volx_out(:,j,k), state_out(:,j,k) )
+        end do
+      end do
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp3d_mesa
 
 end module mesa_parser_module

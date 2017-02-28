@@ -134,47 +134,76 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
     mass_inner = zero
   end if
 
+  ! largest radius of castro grid in spherical coordinates
+  probhi_r = sqrt(sum(max(abs(problo),abs(probhi))**2))
+
   ! integrate mass from chimera data on castro grid
   mass_chim = zero
   vol_chim = zero
-  do i = imin_chim, imax_chim
-    if ( x_e_chim(i) < min(probhi(1),max_radius) ) then
-      if ( x_e_chim(i+1) <= min(probhi(1),max_radius) ) then
-        mass_chim = mass_chim + sum(dmass_e_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim))
-        vol_chim = vol_chim + sum(dvol_e_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim))
-      else
-        dr = x_e_chim(i+1) - min(probhi(1),max_radius)
-        dvolr = dr * ( x_e_chim(i) * min(probhi(1),max_radius) + dr * dr * third )
-        dvol  = four * m_pi * ( dvolx_e_chim(i) - dvolr )
+  do k = kmin_chim, kmax_chim
+    phi = z_c_chim(k)
+    do j = jmin_chim, jmax_chim
+      theta = y_c_chim(j)
+      do i = imin_chim, imax_chim
+        r = x_c_chim(i)
+        rlo = x_e_chim(i)
+        rhi = x_e_chim(i+1)
 
-        vol_chim = vol_chim + dvol
-        mass_chim = mass_chim &
-          &         + sum( rho_c_chim(i,jmin_chim:jmax_chim,kmin_chim:kmax_chim) &
-          &                * domega_chim(jmin_chim:jmax_chim,kmin_chim:kmax_chim) ) &
-          &         * ( dvolx_e_chim(i) - dvolr )
-      end if
-    end if
+        ! only use chimera data if zone is inside max_radius
+        if ( rlo < max_radius ) then
+          x = r * sin( theta ) * cos( phi )
+          y = r * sin( theta ) * sin( phi )
+          z = r * cos( theta )
+
+          ! only include in sum if the zone is on castro grid
+          if ( x > problo(1) .and. x < probhi(1) .and. &
+               y > problo(2) .and. y < probhi(2) .and. &
+               z > problo(3) .and. z < probhi(3) ) then
+
+            if ( rhi > max_radius ) then
+              dr = rhi - max_radius
+              dvolr = dr * ( rlo * max_radius + dr * dr * third )
+              dvol  = domega_chim(j,k) * ( dvolx_e_chim(i) - dvolr )
+
+              vol_chim = vol_chim + dvol
+              mass_chim = mass_chim + rho_c_chim(i,j,k) * dvol
+            else
+              mass_chim = mass_chim + dmass_e_chim(i,j,k)
+              vol_chim = vol_chim + dvol_e_chim(i,j,k)
+            end if
+          end if
+        end if
+
+      end do
+    end do
   end do
 
   ! integrate mass from mesa data on castro grid
   mass_mesa = zero
   vol_mesa = zero
   do i = 1, imax_mesa
-    if ( x_e_mesa(i+1) > max_radius .and. &
-    &    x_e_mesa(i)   < probhi(1) ) then
+    rlo = x_e_mesa(i)
+    rhi = x_e_mesa(i+1)
 
-      domega = four * m_pi
+    ! this includes mesa data on castro grid but not covered by chimera data
+    if ( rhi > max_radius .and. rlo < probhi_r ) then
+
+      r = half * ( rlo + rhi )
 
       dvolr = zero
-      if ( x_e_mesa(i+1) > probhi(1) ) then
-        dr = x_e_mesa(i+1) - probhi(1)
-        dvolr = dvolr + dr * ( probhi(1) * x_e_mesa(i) + dr * dr * third )
+      if ( rhi > probhi_r ) then
+        dr = rhi - probhi_r
+        dvolr = dvolr + dr * ( probhi_r * rhi + dr * dr * third )
       end if
 
-      if ( x_e_mesa(i) < max_radius ) then
-        dr = max_radius - x_e_mesa(i) 
-        dvolr = dvolr + dr * ( x_e_mesa(i) * max_radius + dr * dr * third )
+      if ( rlo < max_radius ) then
+        dr = max_radius - rlo
+        dvolr = dvolr + dr * ( rlo * max_radius + dr * dr * third )
       end if
+
+      ! TODO: calculate the solid angle of shell exterior to castro grid
+      domega_exclude = zero
+      domega = four * m_pi - domega_exclude
 
       dvol = domega * ( dvolx_e_mesa(i) - dvolr )
 
@@ -185,7 +214,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   end do
 
   ! compare gravitational acceleration from edge of chimera grid with castro
-  r = min( probhi(1), max_radius )
+  r = min( probhi_r, max_radius )
   volr = third * r**3
   if ( volr <= volx_c_chim(1) ) then
     i = 0
@@ -204,8 +233,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
 
     write(*,'(a,2es23.15)') 'total volume (chimera, mesa)  =',vol_chim,vol_mesa
     write(*,'(a,es23.15)')  'total volume (chimera + mesa) =',vol_chim+vol_mesa
-    dr = probhi(1) - problo(1)
-    write(*,'(a,es23.15)')  'total volume (castro)         =',four * m_pi * dr * ( problo(1) * probhi(1) + dr * dr * third )
+    write(*,'(a,es23.15)')  'total volume (castro)         =',product(probhi-problo)
   end if
 
   ! set up quadrature weights and abscissae
