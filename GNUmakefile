@@ -1,20 +1,21 @@
 CASTRO_HOME ?= ../..
 
 PRECISION  = DOUBLE
-PROFILE    = FALSE
 
 DEBUG      = FALSE
+#TINY_PROFILE = TRUE
+#PROFILE    = TRUE
 
 #USE_ASSERTION = FALSE
 #TEST          = TRUE
 
-DIM        = 1
+DIM        = 3
 
-COMP	   = gcc
-FCOMP	   = gfortran
+COMP	   = Cray
+FCOMP	   = Cray
 
-FFLAGS    += -ffree-line-length-none
-fFLAGS    += -ffree-line-length-none
+#FFLAGS    += -ffree-line-length-none
+#fFLAGS    += -ffree-line-length-none
 
 DEFINES += -DDO_PROBLEM_POST_INIT
 
@@ -38,8 +39,8 @@ USE_HDF5   = TRUE
 ifdef MICROPHYSICS_HOME
 
 # This sets the EOS directory in $(MICROPHYSICS_HOME)/eos
-#EOS_dir     := helmholtz
-EOS_dir     := stellarcollapse
+EOS_dir     := helmholtz
+#EOS_dir     := stellarcollapse
 
 # This sets the network directory in $(MICROPHYSICS_HOME)/networks
 #Network_dir := aprox21

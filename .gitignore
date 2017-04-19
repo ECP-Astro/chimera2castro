@@ -17,3 +17,5 @@ plt_*
 chk_*
 *.exe
 *.gnu
+*.sl
+*/

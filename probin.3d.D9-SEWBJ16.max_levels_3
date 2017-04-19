@@ -1,6 +1,5 @@
 &fortin
 
-! chimera_fname =  "/Users/austin/Documents/research/chimera/D9-SEWBJ16/1D/chimera_06053_grid_1_01.h5"
   chimera_fname =  "chimera_04545_grid_1_01.h5"
 ! mesa_fname = "s15_0.8_mesa.d"
 
@@ -12,7 +11,7 @@
 
 ! max_radius = 1.2d9
 
-! radius_inner = 2.9296875d6
+  radius_inner = 2.812500e+08
 ! rho_inner = 1.0d+8
 ! temp_inner = 0.0d0
 
@@ -23,11 +22,11 @@
 
 &tagging
 
-! denerr = 1.d9
-! max_denerr_lev = 5
+  denerr = 1.d4
+  max_denerr_lev = 1
 
-  dengrad = 1.d5
-  max_dengrad_lev = 4
+! dengrad = 1.d4
+! max_dengrad_lev = 3
 
 ! temperr = 2.d9
 ! max_temperr_lev = 4
@@ -36,23 +35,29 @@
 
 ! velerr = 3.d9
 ! max_velerr_lev = 4
-  velgrad = 1.d8
-  max_velgrad_lev = 4
+  velgrad = 3.d7
+  max_velgrad_lev = 3
 
-  pressgrad = 1.d22
-  max_pressgrad_lev = 4
+! pressgrad = 1.d21
+! max_pressgrad_lev = 3
+
+  enterr = 1.2d9
+  max_enterr_lev = 2
+
+  entgrad = 3.0d8
+  max_entgrad_lev = 3
 
 /
 
 &sponge
 
-  sponge_lower_factor = 1.0d0
-  sponge_upper_factor = 0.0d0
-  sponge_lower_radius = 2636718.75d0
-  sponge_upper_radius = 2636718.75d0
+! sponge_lower_factor = 1.0d0
+! sponge_upper_factor = 0.0d0
+! sponge_lower_radius = 2636718.75d0
+! sponge_upper_radius = 2636718.75d0
 ! sponge_lower_density = 1.0d11
 ! sponge_upper_density = 1.0d11
-  sponge_timescale = 1.0d-6
+! sponge_timescale = 1.0d-6
 
 /
 
