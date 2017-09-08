@@ -132,4 +132,10 @@ contains
 
   end subroutine actual_network_init
 
+  subroutine actual_network_finalize()
+
+    implicit none
+
+  end subroutine actual_network_finalize
+
 end module actual_network
