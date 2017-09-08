@@ -1,6 +1,6 @@
 module hdf5_read_write
 
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
   use hdf5
   
   implicit none

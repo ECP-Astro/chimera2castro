@@ -1,7 +1,7 @@
 module quadrature_module
 
   use bl_constants_module
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
   public

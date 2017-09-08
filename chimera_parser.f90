@@ -8,7 +8,7 @@ module chimera_parser_module
 
   use parallel, only: parallel_IOProcessor
   use network
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
   use hdf5_read_write
   use hdf5
 

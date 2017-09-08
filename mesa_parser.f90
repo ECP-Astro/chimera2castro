@@ -1,7 +1,7 @@
 module mesa_parser_module
 
   use parallel, only: parallel_IOProcessor
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 

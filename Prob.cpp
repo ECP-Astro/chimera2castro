@@ -6,6 +6,7 @@
 
 #define MAX_LEV 15
 
+using namespace amrex;
 namespace {
 
     // 2D->3D
@@ -54,7 +55,7 @@ Castro::problem_post_init ()
 
     const Geometry& geom = parent->Geom(level);
     const Real* dx   = geom.CellSize();
-    int drdxfac = gravity->drdxfac;
+    int drdxfac = 1;//gravity->drdxfac;
 //    int n1d = drdxfac * ( get_numpts() + 2 * NUM_GROW );
     int n1d = drdxfac * get_numpts();
     Real dr = dx[0] / double(drdxfac);
@@ -65,10 +66,11 @@ Castro::problem_post_init ()
 
 #ifdef _OPENMP
     int nthreads = omp_get_max_threads();
-    PArray< Array<Real> > priv_radial_mass(nthreads, PArrayManage);
+    Array< Array<Real> > priv_radial_mass(nthreads);
     for (int i=0; i<nthreads; i++) {
-	priv_radial_mass.set(i, new Array<Real>(n1d,0.0));
+		priv_radial_mass[i].resize(n1d,0.0);
     }
+
 #endif
 
 #ifdef _OPENMP

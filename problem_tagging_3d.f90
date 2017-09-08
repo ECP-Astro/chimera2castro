@@ -1,6 +1,6 @@
 module problem_tagging_module
 
-  use bl_fort_module, only : rt => c_real
+  use amrex_fort_module, only : rt => amrex_real
   implicit none
 
   public
@@ -18,7 +18,7 @@ contains
 
     use meth_params_module, only: NVAR
 
-    use bl_fort_module, only : rt => c_real
+    use amrex_fort_module, only : rt => amrex_real
     use bl_constants_module, only: HALF
     use parallel, only: parallel_IOProcessor
     use prob_params_module, only: center, dim, n_error_buf, ref_ratio, blocking_factor, dx_level

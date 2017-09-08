@@ -5,7 +5,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use mesa_parser_module
   use bl_constants_module
   use bl_error_module
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
   use eos_module
   use parallel, only: parallel_IOProcessor
   use prob_params_module, only: center
@@ -292,7 +292,7 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
 
   use bl_constants_module
   use bl_error_module
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
   use fundamental_constants_module
   use eos_module
   use eos_type_module, only: minye, maxye

@@ -1,12 +1,13 @@
-subroutine PROBINIT (init,name,namlen,problo,probhi)
+subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
   use probdata_module
   use chimera_parser_module
   use mesa_parser_module
   use bl_constants_module
   use bl_error_module
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
   use eos_module
+  use eos_type_module
   use parallel, only: parallel_IOProcessor
   use prob_params_module, only: center
   use interpolate_module, only: locate
@@ -45,8 +46,8 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   integer :: ipp, ierr, ipp1, n
 
   ! assume axisymmetric
-  center(1) = zero
-  center(2) = half*(problo(2)+probhi(2))
+  center(1) = ZERO
+  center(2) = HALF*(problo(2)+probhi(2))
 
   if (namlen .gt. maxlen) call bl_error("probin file name too long")
 
@@ -59,10 +60,10 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   mesa_fname = ""
   interp_method = 1
   eos_input = eos_input_rt
-  max_radius = zero
-  radius_inner = zero
-  rho_inner = zero
-  temp_inner = zero
+  max_radius = ZERO
+  radius_inner = ZERO
+  rho_inner = ZERO
+  temp_inner = ZERO
   i_inner = 1
   do_particles = .false.
   use_quad = .false.
@@ -97,7 +98,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
 
   ! set the max radius to use chimera data
   ! if r > max_radius, use mesa data
-  if ( max_radius <= zero ) then
+  if ( max_radius <= ZERO ) then
     ! by default, use the volume-center of outer-most chimera zone (excluding ghost zones)
     ! this obviates the need for any extrapolation of chimera data
     max_radius = (three * volx_c_chim(imax_chim) )**third
@@ -111,8 +112,8 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   probhi_r = sqrt(max(abs(problo(2)),abs(probhi(2)))**2+probhi(1)**2)
 
   ! integrate mass from chimera data on castro grid
-  mass_chim = zero
-  vol_chim = zero
+  mass_chim = ZERO
+  vol_chim = ZERO
   do j = jmin_chim, jmax_chim
     do i = imin_chim, imax_chim
       if ( x_e_chim(i) < max_radius ) then
@@ -137,22 +138,22 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   end do
 
   ! integrate mass from mesa data on castro grid
-  mass_mesa = zero
-  vol_mesa = zero
+  mass_mesa = ZERO
+  vol_mesa = ZERO
   do i = 1, imax_mesa
     if ( x_e_mesa(i+1) > max_radius .and. &
     &    x_e_mesa(i)   < probhi_r ) then
 
-      r = half * ( x_e_mesa(i) + x_e_mesa(i+1) )
+      r = HALF * ( x_e_mesa(i) + x_e_mesa(i+1) )
 
       tmp1 = min( one, max( -one, probhi(2)/r ) )
       tmp2 = min( one, max( -one, problo(2)/r ) )
       tmp3 = two * sqrt( one - min( one, probhi(1)/r )**2 )
 
       domega = two * m_pi * ( tmp1 - tmp2 - tmp3 )
-      domega = min( four * m_pi, max( zero, domega ) )
+      domega = min( four * m_pi, max( ZERO, domega ) )
 
-      dvolr = zero
+      dvolr = ZERO
       if ( x_e_mesa(i+1) > probhi_r ) then
         dr = x_e_mesa(i+1) - probhi_r
         dvolr = dvolr + dr * ( probhi_r * x_e_mesa(i) + dr * dr * third )
@@ -198,7 +199,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   if ( use_quad ) call quad_init( nquad )
 
   return
-end subroutine PROBINIT
+end subroutine amrex_probinit
 
 
 ! ::: -----------------------------------------------------------
@@ -227,10 +228,11 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
                        delta,xlo,xhi)
 
   use bl_error_module
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
   use fundamental_constants_module
+  use bl_constants_module
   use eos_module
-  use eos_type_module, only: minye, maxye
+  use eos_type_module
   use meth_params_module, only : NVAR, URHO, UMX, UMY, UMZ, UEINT, UFS, UTEMP, UEDEN, UFX, UFA
   use network, only: nspec, naux
   use probdata_module
@@ -294,18 +296,18 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
   ! determine coordinates in r-theta and quadrature points
   do j = lo(2), hi(2)
-    ycen(j) = xlo(2) + delta(2)*(dble(j-lo(2)) + half)
+    ycen(j) = xlo(2) + delta(2)*(dble(j-lo(2)) + HALF)
     do i = lo(1), hi(1)
-      xcen(i) = xlo(1) + delta(1)*(dble(i-lo(1)) + half)
+      xcen(i) = xlo(1) + delta(1)*(dble(i-lo(1)) + HALF)
       r(i,j) = sqrt( xcen(i)**2 + ycen(j)**2 )
-      if ( r(i,j) <= zero ) then
-        theta(i,j) = zero
-      else if ( ycen(j) == zero ) then
-        theta(i,j) = half * m_pi
+      if ( r(i,j) <= ZERO ) then
+        theta(i,j) = ZERO
+      else if ( ycen(j) == ZERO ) then
+        theta(i,j) = HALF * m_pi
       else
         theta(i,j) = atan( xcen(i)/ycen(j) )
       end if
-      if ( theta(i,j) < zero ) then
+      if ( theta(i,j) < ZERO ) then
         theta(i,j) = theta(i,j) + m_pi
       end if
 
@@ -316,18 +318,18 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
     do j = lo(2), hi(2)
       do i = lo(1), hi(1)
         do jj = 1, nquad
-          yg = ycen(j) + half*delta(2)*xquad(jj)
+          yg = ycen(j) + HALF*delta(2)*xquad(jj)
           do ii = 1, nquad
-            xg = xcen(i) + half*delta(1)*xquad(ii)
+            xg = xcen(i) + HALF*delta(1)*xquad(ii)
             rg(ii,jj) = sqrt( xg**2 + yg**2 )
-            if ( rg(ii,jj) <= zero ) then
-              tg(ii,jj) = zero
-            else if ( yg == zero ) then
-              tg(ii,jj) = half * m_pi
+            if ( rg(ii,jj) <= ZERO ) then
+              tg(ii,jj) = ZERO
+            else if ( yg == ZERO ) then
+              tg(ii,jj) = HALF * m_pi
             else
               tg(ii,jj) = atan( xg/yg )
             end if
-            if ( tg(ii,jj) < zero ) then
+            if ( tg(ii,jj) < ZERO ) then
               tg(ii,jj) = tg(ii,jj) + m_pi
             end if
           end do
@@ -430,7 +432,7 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
       if ( r(i,j) <= max_radius .or. len_trim(mesa_fname) == 0 ) then
 
         if ( r(i,j) < radius_inner ) then
-!         drho = half * ( rho_i_chim(i,j) - rho_inner ) * ( one + tanh( (radius_inner - r(i,j))/dsmooth) )
+!         drho = HALF * ( rho_i_chim(i,j) - rho_inner ) * ( one + tanh( (radius_inner - r(i,j))/dsmooth) )
 !         state(i,j,URHO) = rho_i_chim(i,j) + drho
           state(i,j,URHO) = rho_inner
           eos_state%rho = state(i,j,URHO)
@@ -513,7 +515,7 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
         state(i,j,UMX) = u_i_mesa(i,j) * sin( theta(i,j) )
         state(i,j,UMY) = u_i_mesa(i,j) * cos( theta(i,j) )
-        state(i,j,UMZ) = zero
+        state(i,j,UMZ) = ZERO
         state(i,j,UFS:UFS+nspec-1) = xn_i_mesa(:,i,j)
         if ( naux == 1 ) then
           state(i,j,UFX) = min( maxye, max( minye, ye_i_mesa(i,j) ) )
@@ -538,7 +540,7 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   do j = lo(2), hi(2)
     do i = lo(1), hi(1)
       state(i,j,UEINT)   = state(i,j,URHO) * state(i,j,UEINT)
-      state(i,j,UEDEN)   = state(i,j,UEINT) + state(i,j,URHO)*sum( half*state(i,j,UMX:UMZ)**2 )
+      state(i,j,UEDEN)   = state(i,j,UEINT) + state(i,j,URHO)*sum( HALF*state(i,j,UMX:UMZ)**2 )
       state(i,j,UMX:UMZ) = state(i,j,URHO) * state(i,j,UMX:UMZ)
       state(i,j,UFS:UFS+nspec-1) = state(i,j,URHO) * state(i,j,UFS:UFS+nspec-1)
       if ( naux > 0 ) then

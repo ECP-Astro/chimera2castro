@@ -1,6 +1,6 @@
 module probdata_module
 
-  use bl_fort_module, only: rt => c_real
+  use amrex_fort_module, only: rt => amrex_real
 
   ! chimera hdf5 filename
   character (256), save :: chimera_fname

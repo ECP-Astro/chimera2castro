@@ -1,4 +1,3 @@
-CASTRO_HOME ?= ../..
 
 PRECISION  = DOUBLE
 
@@ -9,10 +8,9 @@ DEBUG      = FALSE
 #USE_ASSERTION = FALSE
 #TEST          = TRUE
 
-DIM        = 3
+DIM        = 2
 
-COMP	   = Cray
-FCOMP	   = Cray
+COMP	   = gnu
 
 #FFLAGS    += -ffree-line-length-none
 #fFLAGS    += -ffree-line-length-none
@@ -26,15 +24,21 @@ USE_GRAV   = TRUE
 USE_GR     = FALSE
 USE_POINTMASS = TRUE
 
-USE_REACT  = TRUE
+USE_REACT  = FALSE
 
-USE_RATES     = TRUE
-USE_SCREENING = TRUE
-USE_NEUTRINOS = TRUE
+USE_RATES     = FALSE
+USE_SCREENING = FALSE
+USE_NEUTRINOS = FALSE
 
 USE_MODELPARSER  = TRUE
 
 USE_HDF5   = TRUE
+
+libraries += -lhdf5 -lhdf5_fortran -lz
+LDFLAGS += -L$(HDF5_DIR)/lib
+VPATH_LOCATIONS += $(HDF5_DIR)/include
+FINCLUDE_LOCATIONS += $(HDF5_DIR)/include
+
 
 ifdef MICROPHYSICS_HOME
 
@@ -45,7 +49,8 @@ EOS_dir     := helmholtz
 # This sets the network directory in $(MICROPHYSICS_HOME)/networks
 #Network_dir := aprox21
 #Network_dir := anp56
-Network_dir := general_null
+#Network_dir := general_null
+Network_dir := aprox13
 GENERAL_NET_INPUTS = $(MICROPHYSICS_HOME)/networks/$(Network_dir)/anp56.net
 
 INTEGRATOR_DIR := BS
