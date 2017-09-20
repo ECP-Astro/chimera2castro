@@ -338,25 +338,25 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
         xg(ii) = xcen(i) + half*dx(1)*xquad(ii)
       end do
 
-      call interp1d_chimera( xg, u_c_chim(:,1,1), u_quad )
-      call interp1d_chimera( xg, v_c_chim(:,1,1), v_quad )
-      call interp1d_chimera( xg, w_c_chim(:,1,1), w_quad )
-      call interp1d_chimera( xg, rho_c_chim(:,1,1), rho_quad )
-      call interp1d_chimera( xg, t_c_chim(:,1,1), t_quad )
-      call interp1d_chimera( xg, p_c_chim(:,1,1), p_quad )
+      call interp1drad_chimera( xg, u_c_chim(:,1,1), u_quad )
+      call interp1drad_chimera( xg, v_c_chim(:,1,1), v_quad )
+      call interp1drad_chimera( xg, w_c_chim(:,1,1), w_quad )
+      call interp1dvol_chimera( xg, rho_c_chim(:,1,1), rho_quad )
+      call interp1drad_chimera( xg, t_c_chim(:,1,1), t_quad )
+      call interp1drad_chimera( xg, p_c_chim(:,1,1), p_quad )
       if ( trim(eos_name) == "stellarcollapse" ) then
-        call interp1d_chimera( xg, ei_c_chim(:,1,1), e_quad )
+        call interp1drad_chimera( xg, ei_c_chim(:,1,1), e_quad )
       else
-        call interp1d_chimera( xg, et_c_chim(:,1,1), e_quad )
+        call interp1drad_chimera( xg, et_c_chim(:,1,1), e_quad )
       end if
-      call interp1d_chimera( xg, s_c_chim(:,1,1), s_quad )
+      call interp1drad_chimera( xg, s_c_chim(:,1,1), s_quad )
       do n = 1, nspec
-        call interp1d_chimera( xg, xn_c_chim(n,:,1,1), xn_quad )
+        call interp1drad_chimera( xg, xn_c_chim(n,:,1,1), xn_quad )
         xn_i_chim(n,i) = quad_avg( wquad, xn_quad )
       end do
-      call interp1d_chimera( xg, ye_c_chim(:,1,1), ye_quad )
-      call interp1d_chimera( xg, a_aux_c_chim(:,1,1), a_aux_quad )
-      call interp1d_chimera( xg, z_aux_c_chim(:,1,1), z_aux_quad )
+      call interp1drad_chimera( xg, ye_c_chim(:,1,1), ye_quad )
+      call interp1drad_chimera( xg, a_aux_c_chim(:,1,1), a_aux_quad )
+      call interp1drad_chimera( xg, z_aux_c_chim(:,1,1), z_aux_quad )
 
       u_i_chim(i) = quad_avg( wquad, u_quad )
       v_i_chim(i) = quad_avg( wquad, v_quad )
@@ -371,36 +371,36 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
       z_aux_i_chim(i) = quad_avg( wquad, z_aux_quad )
     end do
   else
-    call interp1d_chimera( xcen, u_c_chim(:,1,1), u_i_chim )
-    call interp1d_chimera( xcen, v_c_chim(:,1,1), v_i_chim )
-    call interp1d_chimera( xcen, w_c_chim(:,1,1), w_i_chim )
-    call interp1d_chimera( xcen, rho_c_chim(:,1,1), rho_i_chim )
-    call interp1d_chimera( xcen, t_c_chim(:,1,1), t_i_chim )
-    call interp1d_chimera( xcen, p_c_chim(:,1,1), p_i_chim )
+    call interp1drad_chimera( xcen, u_c_chim(:,1,1), u_i_chim )
+    call interp1drad_chimera( xcen, v_c_chim(:,1,1), v_i_chim )
+    call interp1drad_chimera( xcen, w_c_chim(:,1,1), w_i_chim )
+    call interp1dvol_chimera( xcen, rho_c_chim(:,1,1), rho_i_chim )
+    call interp1drad_chimera( xcen, t_c_chim(:,1,1), t_i_chim )
+    call interp1drad_chimera( xcen, p_c_chim(:,1,1), p_i_chim )
     if ( trim(eos_name) == "stellarcollapse" ) then
-      call interp1d_chimera( xcen, ei_c_chim(:,1,1), e_i_chim )
+      call interp1drad_chimera( xcen, ei_c_chim(:,1,1), e_i_chim )
     else
-      call interp1d_chimera( xcen, et_c_chim(:,1,1), e_i_chim )
+      call interp1drad_chimera( xcen, et_c_chim(:,1,1), e_i_chim )
     end if
-    call interp1d_chimera( xcen, s_c_chim(:,1,1), s_i_chim )
+    call interp1drad_chimera( xcen, s_c_chim(:,1,1), s_i_chim )
     do n = 1, nspec
-      call interp1d_chimera( xcen, xn_c_chim(n,:,1,1), xn_i_chim(n,:) )
+      call interp1drad_chimera( xcen, xn_c_chim(n,:,1,1), xn_i_chim(n,:) )
     end do
-    call interp1d_chimera( xcen, ye_c_chim(:,1,1), ye_i_chim )
-    call interp1d_chimera( xcen, a_aux_c_chim(:,1,1), a_aux_i_chim )
-    call interp1d_chimera( xcen, z_aux_c_chim(:,1,1), z_aux_i_chim )
+    call interp1drad_chimera( xcen, ye_c_chim(:,1,1), ye_i_chim )
+    call interp1drad_chimera( xcen, a_aux_c_chim(:,1,1), a_aux_i_chim )
+    call interp1drad_chimera( xcen, z_aux_c_chim(:,1,1), z_aux_i_chim )
   end if
 
   if ( len_trim(star_fname) > 0 ) then
-    call interp1d_star( xcen, u_c_star, u_i_star )
-    call interp1d_star( xcen, rho_c_star, rho_i_star )
-    call interp1d_star( xcen, t_c_star, t_i_star )
+    call interp1drad_star( xcen, u_c_star, u_i_star )
+    call interp1dvol_star( xcen, rho_c_star, rho_i_star )
+    call interp1drad_star( xcen, t_c_star, t_i_star )
     do n = 1, nspec
-      call interp1d_star( xcen, xn_c_star(:,n), xn_i_star(n,:) )
+      call interp1drad_star( xcen, xn_c_star(:,n), xn_i_star(n,:) )
     end do
-    call interp1d_star( xcen, ye_c_star, ye_i_star )
-    call interp1d_star( xcen, a_aux_c_star, a_aux_i_star )
-    call interp1d_star( xcen, z_aux_c_star, z_aux_i_star )
+    call interp1drad_star( xcen, ye_c_star, ye_i_star )
+    call interp1drad_star( xcen, a_aux_c_star, a_aux_i_star )
+    call interp1drad_star( xcen, z_aux_c_star, z_aux_i_star )
   end if
 
   do i = lo(1), hi(1)

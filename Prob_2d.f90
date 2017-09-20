@@ -339,31 +339,31 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
         select case (eos_input)
         case (eos_input_rt)
-          call interp2d_chimera( rg, tg, rho_c_chim(:,:,1), rho_quad )
-          call interp2d_chimera( rg, tg, t_c_chim(:,:,1), t_quad )
+          call interp2dvol_chimera( rg, tg, rho_c_chim(:,:,1), rho_quad )
+          call interp2drad_chimera( rg, tg, t_c_chim(:,:,1), t_quad )
         case (eos_input_rp)
-          call interp2d_chimera( rg, tg, rho_c_chim(:,:,1), rho_quad )
-          call interp2d_chimera( rg, tg, p_c_chim(:,:,1), p_quad )
+          call interp2dvol_chimera( rg, tg, rho_c_chim(:,:,1), rho_quad )
+          call interp2drad_chimera( rg, tg, p_c_chim(:,:,1), p_quad )
         case default
-          call interp2d_chimera( rg, tg, rho_c_chim(:,:,1), rho_i_chim )
-          call interp2d_chimera( rg, tg, t_c_chim(:,:,1), t_i_chim )
+          call interp2dvol_chimera( rg, tg, rho_c_chim(:,:,1), rho_i_chim )
+          call interp2drad_chimera( rg, tg, t_c_chim(:,:,1), t_i_chim )
         end select
-        call interp2d_chimera( rg, tg, u_c_chim(:,:,1), u_quad )
-        call interp2d_chimera( rg, tg, v_c_chim(:,:,1), v_quad )
-        call interp2d_chimera( rg, tg, w_c_chim(:,:,1), w_quad )
+        call interp2drad_chimera( rg, tg, u_c_chim(:,:,1), u_quad )
+        call interp2drad_chimera( rg, tg, v_c_chim(:,:,1), v_quad )
+        call interp2drad_chimera( rg, tg, w_c_chim(:,:,1), w_quad )
         do n = 1, nspec
-          call interp2d_chimera( rg, tg, xn_c_chim(n,:,:,1), xn_quad )
+          call interp2drad_chimera( rg, tg, xn_c_chim(n,:,:,1), xn_quad )
           xn_i_chim(n,i,j) = quad_avg( wquad, xn_quad )
         end do
         if ( naux == 1 ) then
-          call interp2d_chimera( rg, tg, ye_c_chim(:,:,1), ye_quad )
+          call interp2drad_chimera( rg, tg, ye_c_chim(:,:,1), ye_quad )
         else if ( naux == 2 ) then
-          call interp2d_chimera( rg, tg, a_aux_c_chim(:,:,1), a_aux_quad )
-          call interp2d_chimera( rg, tg, z_aux_c_chim(:,:,1), z_aux_quad )
+          call interp2drad_chimera( rg, tg, a_aux_c_chim(:,:,1), a_aux_quad )
+          call interp2drad_chimera( rg, tg, z_aux_c_chim(:,:,1), z_aux_quad )
         else if ( naux == 3 ) then
-          call interp2d_chimera( rg, tg, ye_c_chim(:,:,1), ye_quad )
-          call interp2d_chimera( rg, tg, a_aux_c_chim(:,:,1), a_aux_quad )
-          call interp2d_chimera( rg, tg, z_aux_c_chim(:,:,1), z_aux_quad )
+          call interp2drad_chimera( rg, tg, ye_c_chim(:,:,1), ye_quad )
+          call interp2drad_chimera( rg, tg, a_aux_c_chim(:,:,1), a_aux_quad )
+          call interp2drad_chimera( rg, tg, z_aux_c_chim(:,:,1), z_aux_quad )
         end if
         rho_i_chim(i,j) = quad_avg( wquad, rho_quad )
         t_i_chim(i,j) = quad_avg( wquad, t_quad )
@@ -379,49 +379,49 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   else
     select case (eos_input)
       case (eos_input_rt)
-        call interp2d_chimera( r, theta, rho_c_chim(:,:,1), rho_i_chim )
-        call interp2d_chimera( r, theta, t_c_chim(:,:,1), t_i_chim )
+        call interp2dvol_chimera( r, theta, rho_c_chim(:,:,1), rho_i_chim )
+        call interp2drad_chimera( r, theta, t_c_chim(:,:,1), t_i_chim )
       case (eos_input_rp)
-        call interp2d_chimera( r, theta, rho_c_chim(:,:,1), rho_i_chim )
-        call interp2d_chimera( r, theta, p_c_chim(:,:,1), p_i_chim )
+        call interp2dvol_chimera( r, theta, rho_c_chim(:,:,1), rho_i_chim )
+        call interp2drad_chimera( r, theta, p_c_chim(:,:,1), p_i_chim )
       case default
-        call interp2d_chimera( r, theta, rho_c_chim(:,:,1), rho_i_chim )
-        call interp2d_chimera( r, theta, t_c_chim(:,:,1), t_i_chim )
+        call interp2dvol_chimera( r, theta, rho_c_chim(:,:,1), rho_i_chim )
+        call interp2drad_chimera( r, theta, t_c_chim(:,:,1), t_i_chim )
     end select
     do n = 1, nspec
-      call interp2d_chimera( r, theta, xn_c_chim(n,:,:,1), xn_i_chim(n,:,:) )
+      call interp2drad_chimera( r, theta, xn_c_chim(n,:,:,1), xn_i_chim(n,:,:) )
     end do
-    call interp2d_chimera( r, theta, u_c_chim(:,:,1), u_i_chim )
-    call interp2d_chimera( r, theta, v_c_chim(:,:,1), v_i_chim )
-    call interp2d_chimera( r, theta, w_c_chim(:,:,1), w_i_chim )
+    call interp2drad_chimera( r, theta, u_c_chim(:,:,1), u_i_chim )
+    call interp2drad_chimera( r, theta, v_c_chim(:,:,1), v_i_chim )
+    call interp2drad_chimera( r, theta, w_c_chim(:,:,1), w_i_chim )
     if ( naux == 1 ) then
-      call interp2d_chimera( r, theta, ye_c_chim(:,:,1), ye_i_chim )
+      call interp2drad_chimera( r, theta, ye_c_chim(:,:,1), ye_i_chim )
     else if ( naux == 2 ) then
-      call interp2d_chimera( r, theta, a_aux_c_chim(:,:,1), a_aux_i_chim )
-      call interp2d_chimera( r, theta, z_aux_c_chim(:,:,1), z_aux_i_chim )
+      call interp2drad_chimera( r, theta, a_aux_c_chim(:,:,1), a_aux_i_chim )
+      call interp2drad_chimera( r, theta, z_aux_c_chim(:,:,1), z_aux_i_chim )
     else if ( naux == 3 ) then
-      call interp2d_chimera( r, theta, ye_c_chim(:,:,1), ye_i_chim )
-      call interp2d_chimera( r, theta, a_aux_c_chim(:,:,1), a_aux_i_chim )
-      call interp2d_chimera( r, theta, z_aux_c_chim(:,:,1), z_aux_i_chim )
+      call interp2drad_chimera( r, theta, ye_c_chim(:,:,1), ye_i_chim )
+      call interp2drad_chimera( r, theta, a_aux_c_chim(:,:,1), a_aux_i_chim )
+      call interp2drad_chimera( r, theta, z_aux_c_chim(:,:,1), z_aux_i_chim )
     end if
   end if
 
   if ( len_trim(star_fname) > 0 ) then
-    call interp2d_star( r, rho_c_star, rho_i_star )
-    call interp2d_star( r, t_c_star, t_i_star )
+    call interp2dvol_star( r, rho_c_star, rho_i_star )
+    call interp2drad_star( r, t_c_star, t_i_star )
     do n = 1, nspec
-      call interp2d_star( r, xn_c_star(:,n), xn_i_star(n,:,:) )
+      call interp2drad_star( r, xn_c_star(:,n), xn_i_star(n,:,:) )
     end do
-    call interp2d_star( r, u_c_star, u_i_star )
+    call interp2drad_star( r, u_c_star, u_i_star )
     if ( naux == 1 ) then
-      call interp2d_star( r, ye_c_star, ye_i_star )
+      call interp2drad_star( r, ye_c_star, ye_i_star )
     else if ( naux == 2 ) then
-      call interp2d_star( r, a_aux_c_star, a_aux_i_star )
-      call interp2d_star( r, z_aux_c_star, z_aux_i_star )
+      call interp2drad_star( r, a_aux_c_star, a_aux_i_star )
+      call interp2drad_star( r, z_aux_c_star, z_aux_i_star )
     else if ( naux == 3 ) then
-      call interp2d_star( r, ye_c_star, ye_i_star )
-      call interp2d_star( r, a_aux_c_star, a_aux_i_star )
-      call interp2d_star( r, z_aux_c_star, z_aux_i_star )
+      call interp2drad_star( r, ye_c_star, ye_i_star )
+      call interp2drad_star( r, a_aux_c_star, a_aux_i_star )
+      call interp2drad_star( r, z_aux_c_star, z_aux_i_star )
     end if
   end if
 

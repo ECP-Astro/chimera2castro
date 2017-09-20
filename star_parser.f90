@@ -549,7 +549,7 @@ module star_parser_module
     return
   end subroutine nucaz_from_name
 
-  subroutine interp1d_star( x_out, state_star, state_out )
+  subroutine interp1dvol_star( x_out, state_star, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -596,9 +596,56 @@ module star_parser_module
     end if
 
     return
-  end subroutine interp1d_star
+  end subroutine interp1dvol_star
 
-  subroutine interp2d_star( x_out, state_star, state_out )
+
+  subroutine interp1drad_star( x_out, state_star, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp1d_linear, interp1d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:)
+    real (rt), intent(in) :: state_star(:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out))
+
+    ! local variables
+    integer :: ix(size(x_out))
+    integer :: ix_max
+
+    integer :: i, j, n
+
+
+    if ( interp_method == 1 ) then
+
+      ix_max = imax_star
+      ix(:) = 1
+      do i = 1, size(x_out)
+        if ( x_out(i) <= x_e_star(1) ) then
+          ix(i) = 0
+        else if ( x_out(i) >= x_e_star(ix_max) ) then
+          ix(i) = ix_max
+        else
+          ix(i) = locate( x_out(i), ix_max, x_e_star ) - 1
+        end if
+      end do
+      call interp1d_linear( ix, ix_max, x_e_star, state_star, x_out, state_out )
+    else if ( interp_method == 2 ) then
+      call interp1d_spline( x_e_star, state_star, x_out, state_out )
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp1drad_star
+
+
+  subroutine interp2dvol_star( x_out, state_star, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -649,9 +696,59 @@ module star_parser_module
     end if
 
     return
-  end subroutine interp2d_star
+  end subroutine interp2dvol_star
 
-  subroutine interp3d_star( x_out, state_star, state_out )
+  subroutine interp2drad_star( x_out, state_star, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp1d_linear, interp1d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:,:)
+    real (rt), intent(in) :: state_star(:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2))
+
+    ! local variables
+    integer :: ix(size(x_out,1))
+    integer :: ix_max
+
+    integer :: i, j, n
+
+
+    if ( interp_method == 1 ) then
+
+      ix_max = imax_star
+      do j = 1, size(x_out,2)
+        ix(:) = 1
+        do i = 1, size(x_out,1)
+          if ( x_out(i,j) <= x_e_star(1) ) then
+            ix(i) = 0
+          else if ( x_out(i,j) >= x_e_star(ix_max) ) then
+            ix(i) = ix_max
+          else
+            ix(i) = locate( x_out(i,j), ix_max, x_e_star ) - 1
+          end if
+        end do
+        call interp1d_linear( ix, ix_max, x_e_star, state_star, x_out(:,j), state_out(:,j) )
+      end do
+    else if ( interp_method == 2 ) then
+      do j = 1, size(x_out,2)
+        call interp1d_spline( x_e_star, state_star, x_out(:,j), state_out(:,j) )
+      end do
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp2drad_star
+
+
+  subroutine interp3dvol_star( x_out, state_star, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -705,6 +802,59 @@ module star_parser_module
     end if
 
     return
-  end subroutine interp3d_star
+  end subroutine interp3dvol_star
+
+  subroutine interp3drad_star( x_out, state_star, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp1d_linear, interp1d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:,:,:)
+    real (rt), intent(in) :: state_star(:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    ! local variables
+    integer :: ix(size(x_out,1))
+    integer :: ix_max
+
+    integer :: i, j, k
+
+    if ( interp_method == 1 ) then
+
+      ix_max = imax_star
+      do k = 1, size(x_out,3)
+        do j = 1, size(x_out,2)
+          ix(:) = 1
+          do i = 1, size(x_out,1)
+            if ( x_out(i,j,k) <= x_e_star(1) ) then
+              ix(i) = 0
+            else if ( x_out(i,j,k) >= x_e_star(ix_max) ) then
+              ix(i) = ix_max
+            else
+              ix(i) = locate( x_out(i,j,k), ix_max, x_e_star ) - 1
+            end if
+          end do
+          call interp1d_linear( ix, ix_max, x_e_star, state_star, x_out(:,j,k), state_out(:,j,k) )
+        end do
+      end do
+    else if ( interp_method == 2 ) then
+      do k = 1, size(x_out,3)
+        do j = 1, size(x_out,2)
+          call interp1d_spline( x_e_star, state_star, x_out(:,j,k), state_out(:,j,k) )
+        end do
+      end do
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp3drad_star
+
 
 end module star_parser_module

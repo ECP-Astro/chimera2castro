@@ -673,7 +673,7 @@ contains
     return
   end subroutine grid_bc
 
-  subroutine interp1d_chimera( x_out, state_chim, state_out )
+  subroutine interp1dvol_chimera( x_out, state_chim, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -719,9 +719,55 @@ contains
     end if
 
     return
-  end subroutine interp1d_chimera
+  end subroutine interp1dvol_chimera
 
-  subroutine interp2d_chimera( x_out, y_out, state_chim, state_out )
+
+  subroutine interp1drad_chimera( x_out, state_chim, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp1d_linear, interp1d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:)
+    real (rt), intent(in) :: state_chim(:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out))
+
+    ! local variables
+    integer :: ix(size(x_out))
+    integer :: ix_max
+
+    integer :: i, n
+
+    ix_max = imax_chim
+
+    if ( interp_method == 1 ) then
+      ix(:) = 0
+      do i = 1, size(x_out)
+        if ( x_out(i) <= x_c_chim(1) ) then
+          ix(i) = 0
+        else if ( x_out(i) >= x_c_chim(ix_max) ) then
+          ix(i) = ix_max
+        else
+          ix(i) = locate( x_out(i), ix_max, x_c_chim ) - 1
+        end if
+      end do
+      call interp1d_linear( ix, ix_max, x_c_chim, state_chim, x_out, state_out )
+    else if ( interp_method == 2 ) then
+      call interp1d_spline( x_c_chim, state_chim, x_out, state_out )
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp1drad_chimera
+
+
+  subroutine interp2dvol_chimera( x_out, y_out, state_chim, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -790,9 +836,75 @@ contains
     end if
 
     return
-  end subroutine interp2d_chimera
+  end subroutine interp2dvol_chimera
 
-  subroutine interp2d_quad_chimera( x_out, y_out, state_chim, state_out )
+  subroutine interp2drad_chimera( x_out, y_out, state_chim, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp2d_linear, interp2d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:,:)
+    real (rt), intent(in) :: y_out(:,:)
+    real (rt), intent(in) :: state_chim(:,:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2))
+
+    ! local variables
+    integer :: ix(size(x_out,1),size(x_out,2))
+    integer :: ix_max
+
+    integer :: iy(size(x_out,1),size(x_out,2))
+    integer :: iy_max
+
+    integer :: i, j, n
+
+
+    ix_max = imax_chim
+    iy_max = jmax_chim
+
+    if ( interp_method == 1 ) then
+
+      ix(:,:) = 0
+      iy(:,:) = 0
+      do j = 1, size(x_out,2)
+        do i = 1, size(x_out,1)
+          if ( x_out(i,j) <= x_c_chim(1) ) then
+            ix(i,j) = 0
+          else if ( x_out(i,j) >= x_c_chim(ix_max) ) then
+            ix(i,j) = ix_max
+          else
+            ix(i,j) = locate( x_out(i,j), ix_max, x_c_chim ) - 1
+          end if
+          if ( y_out(i,j) <= y_c_chim(1) ) then
+            iy(i,j) = 0
+          else if ( y_out(i,j) >= y_c_chim(iy_max) ) then
+            iy(i,j) = iy_max
+          else
+            iy(i,j) = locate( y_out(i,j), iy_max, y_c_chim ) - 1
+          end if
+        end do
+      end do
+
+      call interp2d_linear( ix, ix_max, iy, iy_max, x_c_chim, y_c_chim, state_chim, &
+      &                     x_out, y_out, state_out )
+
+    else if ( interp_method == 2 ) then
+      call interp2d_spline( x_c_chim(1:ix_max), y_c_chim(1:iy_max), state_chim(1:ix_max,1:iy_max), &
+      &                     x_out, y_out, state_out )
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp2drad_chimera
+
+
+  subroutine interp2dvol_quad_chimera( x_out, y_out, state_chim, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -882,9 +994,102 @@ contains
     end if
 
     return
-  end subroutine interp2d_quad_chimera
+  end subroutine interp2dvol_quad_chimera
 
-  subroutine interp3d_chimera( x_out, y_out, z_out, state_chim, state_out )
+
+  subroutine interp2drad_quad_chimera( x_out, y_out, state_chim, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use model_interp_module, only: interp2d_linear, interp2d_spline
+    use interpolate_module, only: locate
+    use probdata_module, only: interp_method, nquad
+    use quadrature_module, only: wquad, quad_avg
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:,:,:,:)
+    real (rt), intent(in) :: y_out(:,:,:,:)
+    real (rt), intent(in) :: state_chim(:,:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out,3),size(x_out,4))
+
+    ! local variables
+    integer :: ix(size(x_out,1),size(x_out,2))
+    integer :: ix_max
+
+    integer :: iy(size(x_out,1),size(x_out,2))
+    integer :: iy_max
+
+    real (rt) :: x_quad(size(x_out,1),size(x_out,2))
+    real (rt) :: y_quad(size(x_out,1),size(x_out,2))
+
+
+    real (rt) :: state_quad(size(x_out,1),size(x_out,1))
+
+    integer :: i, ii, j, jj, n
+
+    ix_max = imax_chim
+    iy_max = jmax_chim
+
+    if ( interp_method == 1 ) then
+
+      do j = 1, size(x_out,4)
+        do i = 1, size(x_out,3)
+          x_quad   = x_out(:,:,i,j)
+          y_quad =   y_out(:,:,i,j)
+
+          ix(:,:) = 0
+          iy(:,:) = 0
+          do jj = 1, nquad
+            do ii = 1, nquad
+              if ( x_quad(ii,jj) <= x_c_chim(1) ) then
+                ix(ii,jj) = 0
+              else if ( x_quad(ii,jj) >= x_c_chim(ix_max) ) then
+                ix(ii,jj) = ix_max
+              else
+                ix(ii,jj) = locate( x_quad(ii,jj), ix_max, x_c_chim ) - 1
+              end if
+              if ( y_quad(ii,jj) <= y_c_chim(1) ) then
+                iy(ii,jj) = 0
+              else if ( y_quad(ii,jj) >= y_c_chim(iy_max) ) then
+                iy(ii,jj) = iy_max
+              else
+                iy(ii,jj) = locate( y_quad(ii,jj), iy_max, y_c_chim ) - 1
+              end if
+            end do
+          end do
+
+          call interp2d_linear( ix, ix_max, iy, iy_max, x_c_chim, y_c_chim, state_chim, &
+          &                     x_quad, y_quad, state_quad )
+
+          state_out(i,j) = quad_avg( wquad, state_quad )
+
+        end do
+      end do
+
+    else if ( interp_method == 2 ) then
+      do j = 1, size(x_out,4)
+        do i = 1, size(x_out,3)
+          x_quad = x_out(:,:,i,j)
+          y_quad = y_out(:,:,i,j)
+
+          call interp2d_spline( x_c_chim(1:ix_max), y_c_chim(1:iy_max), state_chim(1:ix_max,1:iy_max), &
+          &                     x_quad, y_quad, state_quad )
+
+          state_out(i,j) = quad_avg( wquad, state_quad )
+
+        end do
+      end do
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp2drad_quad_chimera
+
+
+  subroutine interp3dvol_chimera( x_out, y_out, z_out, state_chim, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -974,6 +1179,91 @@ contains
     end if
 
     return
-  end subroutine interp3d_chimera
+  end subroutine interp3dvol_chimera
+
+  subroutine interp3drad_chimera( x_out, y_out, z_out, state_chim, state_out )
+
+    use bl_constants_module
+    use bl_error_module
+    use interpolate_module, only: locate
+    use model_interp_module, only: interp3d_linear, interp3d_spline
+    use probdata_module, only: interp_method
+
+    ! input variables
+    real (rt), intent(in) :: x_out(:,:,:)
+    real (rt), intent(in) :: y_out(:,:,:)
+    real (rt), intent(in) :: z_out(:,:,:)
+    real (rt), intent(in) :: state_chim(:,:,:)
+
+    ! output variables
+    real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2),size(x_out,3))
+
+    ! local variables
+    integer :: ix(size(x_out,1),size(x_out,2),size(x_out,3))
+    integer :: ix_max
+
+    integer :: iy(size(x_out,1),size(x_out,2),size(x_out,3))
+    integer :: iy_max
+
+    integer :: iz(size(x_out,1),size(x_out,2),size(x_out,3))
+    integer :: iz_max
+
+
+    integer :: i, j, k, n
+
+    ix_max = imax_chim
+    iy_max = jmax_chim
+    iz_max = kmax_chim
+
+    if ( interp_method == 1 ) then
+
+      ix = 0
+      iy = 0
+      iz = 0
+      do k = 1, size(x_out,3)
+        do j = 1, size(x_out,2)
+          do i = 1, size(x_out,1)
+            if ( x_out(i,j,k) <= x_c_chim(1) ) then
+              ix(i,j,k) = 0
+            else if ( x_out(i,j,k) >= x_c_chim(ix_max) ) then
+              ix(i,j,k) = ix_max
+            else
+              ix(i,j,k) = locate( x_out(i,j,k), ix_max, x_c_chim ) - 1
+            end if
+            
+            if ( y_out(i,j,k) <= y_c_chim(1) ) then
+              iy(i,j,k) = 0
+            else if ( y_out(i,j,k) >= y_c_chim(iy_max) ) then
+              iy(i,j,k) = iy_max
+            else
+              iy(i,j,k) = locate( y_out(i,j,k), iy_max, y_c_chim ) - 1
+            end if
+
+            if ( z_out(i,j,k) <= z_c_chim(1) ) then
+              iz(i,j,k) = 0
+            else if ( z_out(i,j,k) >= z_c_chim(iz_max) ) then
+              iz(i,j,k) = iz_max
+            else
+              iz(i,j,k) = locate( z_out(i,j,k), iz_max, z_c_chim ) - 1
+            end if
+          end do
+        end do
+      end do
+
+      call interp3d_linear( ix, ix_max, iy, iy_max, iz, iz_max, &
+      &                     x_c_chim, y_c_chim, z_c_chim, state_chim, &
+      &                     x_out, y_out, z_out, state_out )
+
+!   else if ( interp_method == 2 ) then
+!     call interp3d_spline( volx_c_chim(1:ix_max), voly_c_chim(1:iy_max), volz_c_chim(1:iz_max), &
+!     &                     state_chim(1:ix_max,1:iy_max,1:iz_max), &
+!     &                     volx_out, voly_out, volz_out, state_out )
+    else
+      call bl_error("invalid value for interp_method")
+    end if
+
+    return
+  end subroutine interp3drad_chimera
+
 
 end module chimera_parser_module

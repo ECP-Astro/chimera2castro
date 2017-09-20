@@ -414,25 +414,25 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
             end do
           end do
 
-          call interp3d_chimera( rg, tg, pg, u_c_chim(:,:,:), u_quad )
-          call interp3d_chimera( rg, tg, pg, v_c_chim(:,:,:), v_quad )
-          call interp3d_chimera( rg, tg, pg, w_c_chim(:,:,:), w_quad )
-          call interp3d_chimera( rg, tg, pg, rho_c_chim(:,:,:), rho_quad )
-          call interp3d_chimera( rg, tg, pg, t_c_chim(:,:,:), t_quad )
-          call interp3d_chimera( rg, tg, pg, p_c_chim(:,:,:), p_quad )
+          call interp3drad_chimera( rg, tg, pg, u_c_chim(:,:,:), u_quad )
+          call interp3drad_chimera( rg, tg, pg, v_c_chim(:,:,:), v_quad )
+          call interp3drad_chimera( rg, tg, pg, w_c_chim(:,:,:), w_quad )
+          call interp3dvol_chimera( rg, tg, pg, rho_c_chim(:,:,:), rho_quad )
+          call interp3drad_chimera( rg, tg, pg, t_c_chim(:,:,:), t_quad )
+          call interp3drad_chimera( rg, tg, pg, p_c_chim(:,:,:), p_quad )
           if ( trim(eos_name) == "stellarcollapse" ) then
-            call interp3d_chimera( rg, tg, pg, ei_c_chim(:,:,:), e_quad )
+            call interp3drad_chimera( rg, tg, pg, ei_c_chim(:,:,:), e_quad )
           else
-            call interp3d_chimera( rg, tg, pg, et_c_chim(:,:,:), e_quad )
+            call interp3drad_chimera( rg, tg, pg, et_c_chim(:,:,:), e_quad )
           end if
-          call interp3d_chimera( rg, tg, pg, s_c_chim(:,:,:), s_quad )
+          call interp3drad_chimera( rg, tg, pg, s_c_chim(:,:,:), s_quad )
           do n = 1, nspec
-            call interp3d_chimera( rg, tg, pg, xn_c_chim(n,:,:,:), xn_quad )
+            call interp3drad_chimera( rg, tg, pg, xn_c_chim(n,:,:,:), xn_quad )
             xn_i_chim(n,i,j,k) = quad_avg( wquad, xn_quad )
           end do
-          call interp3d_chimera( rg, tg, pg, ye_c_chim(:,:,:), ye_quad )
-          call interp3d_chimera( rg, tg, pg, a_aux_c_chim(:,:,:), a_aux_quad )
-          call interp3d_chimera( rg, tg, pg, z_aux_c_chim(:,:,:), z_aux_quad )
+          call interp3drad_chimera( rg, tg, pg, ye_c_chim(:,:,:), ye_quad )
+          call interp3drad_chimera( rg, tg, pg, a_aux_c_chim(:,:,:), a_aux_quad )
+          call interp3drad_chimera( rg, tg, pg, z_aux_c_chim(:,:,:), z_aux_quad )
 
           u_i_chim(i,j,k) = quad_avg( wquad, u_quad )
           v_i_chim(i,j,k) = quad_avg( wquad, v_quad )
@@ -452,37 +452,37 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
 
   else
 
-    call interp3d_chimera( r, theta, phi, u_c_chim(:,:,:), u_i_chim )
-    call interp3d_chimera( r, theta, phi, v_c_chim(:,:,:), v_i_chim )
-    call interp3d_chimera( r, theta, phi, w_c_chim(:,:,:), w_i_chim )
-    call interp3d_chimera( r, theta, phi, rho_c_chim(:,:,:), rho_i_chim )
-    call interp3d_chimera( r, theta, phi, t_c_chim(:,:,:), t_i_chim )
-    call interp3d_chimera( r, theta, phi, p_c_chim(:,:,:), p_i_chim )
+    call interp3drad_chimera( r, theta, phi, u_c_chim(:,:,:), u_i_chim )
+    call interp3drad_chimera( r, theta, phi, v_c_chim(:,:,:), v_i_chim )
+    call interp3drad_chimera( r, theta, phi, w_c_chim(:,:,:), w_i_chim )
+    call interp3dvol_chimera( r, theta, phi, rho_c_chim(:,:,:), rho_i_chim )
+    call interp3drad_chimera( r, theta, phi, t_c_chim(:,:,:), t_i_chim )
+    call interp3drad_chimera( r, theta, phi, p_c_chim(:,:,:), p_i_chim )
     if ( trim(eos_name) == "stellarcollapse" ) then
-      call interp3d_chimera( r, theta, phi, ei_c_chim(:,:,:), e_i_chim )
+      call interp3drad_chimera( r, theta, phi, ei_c_chim(:,:,:), e_i_chim )
     else
-      call interp3d_chimera( r, theta, phi, et_c_chim(:,:,:), e_i_chim )
+      call interp3drad_chimera( r, theta, phi, et_c_chim(:,:,:), e_i_chim )
     end if
-    call interp3d_chimera( r, theta, phi, s_c_chim(:,:,:), s_i_chim )
+    call interp3drad_chimera( r, theta, phi, s_c_chim(:,:,:), s_i_chim )
     do n = 1, nspec
-      call interp3d_chimera( r, theta, phi, xn_c_chim(n,:,:,:), xn_i_chim(n,:,:,:) )
+      call interp3drad_chimera( r, theta, phi, xn_c_chim(n,:,:,:), xn_i_chim(n,:,:,:) )
     end do
-    call interp3d_chimera( r, theta, phi, ye_c_chim(:,:,:), ye_i_chim )
-    call interp3d_chimera( r, theta, phi, a_aux_c_chim(:,:,:), a_aux_i_chim )
-    call interp3d_chimera( r, theta, phi, z_aux_c_chim(:,:,:), z_aux_i_chim )
+    call interp3drad_chimera( r, theta, phi, ye_c_chim(:,:,:), ye_i_chim )
+    call interp3drad_chimera( r, theta, phi, a_aux_c_chim(:,:,:), a_aux_i_chim )
+    call interp3drad_chimera( r, theta, phi, z_aux_c_chim(:,:,:), z_aux_i_chim )
 
   end if
 
   if ( len_trim(star_fname) > 0 ) then
-    call interp3d_star( r, u_c_star, u_i_star )
-    call interp3d_star( r, rho_c_star, rho_i_star )
-    call interp3d_star( r, t_c_star, t_i_star )
+    call interp3drad_star( r, u_c_star, u_i_star )
+    call interp3dvol_star( r, rho_c_star, rho_i_star )
+    call interp3drad_star( r, t_c_star, t_i_star )
     do n = 1, nspec
-      call interp3d_star( r, xn_c_star(:,n), xn_i_star(n,:,:,:) )
+      call interp3drad_star( r, xn_c_star(:,n), xn_i_star(n,:,:,:) )
     end do
-    call interp3d_star( r, ye_c_star, ye_i_star )
-    call interp3d_star( r, a_aux_c_star, a_aux_i_star )
-    call interp3d_star( r, z_aux_c_star, z_aux_i_star )
+    call interp3drad_star( r, ye_c_star, ye_i_star )
+    call interp3drad_star( r, a_aux_c_star, a_aux_i_star )
+    call interp3drad_star( r, z_aux_c_star, z_aux_i_star )
   end if
 
   do k = lo(3), hi(3)
