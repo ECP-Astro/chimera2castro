@@ -1,39 +1,81 @@
-module mesa_parser_module
+module kepler_parser_module
 
   use parallel, only: parallel_IOProcessor
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
 
-  integer, save :: nx_mesa, nnc_mesa
-  integer, save :: imin_mesa, imax_mesa
+  integer, save :: nx_kep, nnc_kep ! max num. zones, num. nuclei in progenitor set
+  integer, save :: imin_kep, imax_kep ! min zone, num. of zones
+  integer, save :: i_nse_kep !last zone in use
 
-  real (rt), allocatable, save :: x_e_mesa(:)
-  real (rt), allocatable, save :: dx_e_mesa(:)
-  real (rt), allocatable, save :: volx_e_mesa(:)
-  real (rt), allocatable, save :: volx_c_mesa(:)
-  real (rt), allocatable, save :: dvolx_e_mesa(:)
-  real (rt), allocatable, save :: dvolx_c_mesa(:)
-  real (rt), allocatable, save :: dvol_e_mesa(:)
-  real (rt), allocatable, save :: dmass_e_mesa(:)
 
-  real (rt), allocatable, save :: u_c_mesa(:)
-  real (rt), allocatable, save :: rho_c_mesa(:)
-  real (rt), allocatable, save :: t_c_mesa(:)
-  real (rt), allocatable, save :: ye_c_mesa(:)
+  character(len=5), allocatable, save :: nuc_name_kep(:) ! nuclei names
+  real (rt), allocatable, save :: xn_full_kep(:) ! mass fractions
+  real (rt), allocatable, save :: m0_kep(:) ! enclosed mass [g]
+  real (rt), allocatable, save :: dm0_kep(:) ! cell mass [g]
+  real (rt), allocatable, save :: vol_kep(:) ! cell volume [cm^3]
+  real (rt), allocatable, save :: r0_kep(:) ! radius [cm]
+  real (rt), allocatable, save :: rho0_kep(:) ! density [g cm^{-3}]
+  real (rt), allocatable, save :: temp0_kep(:) ! temperature [K]
+  real (rt), allocatable, save :: u0_kep(:) ! velocity [cm s^{-1}]
+  real (rt), allocatable, save :: ye0_kep(:) ! electron fraction
+  real (rt), allocatable, save :: p0_kep(:) ! pressure [erg cm^{-3}]
+  real (rt), allocatable, save :: e0_kep(:) ! internal energy [erg g^{-1}]
+  real (rt), allocatable, save :: s0_kep(:) ! entropy 
+  real (rt), allocatable, save :: ang_vel0_kep(:) ! angular velocity 
 
-  real (rt), allocatable, save :: xn_c_mesa(:,:)
-  real (rt), allocatable, save :: a_nuc_mesa(:)
-  real (rt), allocatable, save :: z_nuc_mesa(:)
-  real (rt), allocatable, save :: be_nuc_mesa(:)
-  character(len=5), allocatable, save :: name_nuc_mesa(:)
 
-  real (rt), allocatable, save :: a_aux_c_mesa(:)
-  real (rt), allocatable, save :: z_aux_c_mesa(:)
+  real (rt), allocatable, save :: a_nuc_kep(:)
+  real (rt), allocatable, save :: z_nuc_kep(:)
+  real (rt), allocatable, save :: a_aux_nuc_kep(:)
+  real (rt), allocatable, save :: z_aux_nuc_kep(:)
+  real (rt), allocatable, save :: be_aux_nuc_kep(:)
+
+
+  real (rt), allocatable, save :: volx_e_kep(:)
+  real (rt), allocatable, save :: volx_c_kep(:)
+  real (rt), allocatable, save :: dvolx_e_kep(:)
+  real (rt), allocatable, save :: dvolx_c_kep(:)
+
+
+
+
+
+  ! ---unused MESA vars from conversion-----
+
+  ! real (rt), allocatable, save :: x_e_kep(:)
+  ! real (rt), allocatable, save :: dx_e_kep(:)
+  ! real (rt), allocatable, save :: volx_e_kep(:)
+  ! real (rt), allocatable, save :: volx_c_kep(:)
+  ! real (rt), allocatable, save :: dvolx_e_kep(:)
+  ! real (rt), allocatable, save :: dvolx_c_kep(:)
+  ! real (rt), allocatable, save :: dvol_e_kep(:)
+  ! real (rt), allocatable, save :: dmass_e_kep(:)
+
+  ! real (rt), allocatable, save :: u_c_kep(:)
+  ! real (rt), allocatable, save :: rho_c_kep(:)
+  ! real (rt), allocatable, save :: t_c_kep(:)
+  ! real (rt), allocatable, save :: ye_c_kep(:)
+
+  ! real (rt), allocatable, save :: xn_c_kep(:,:)
+  ! real (rt), allocatable, save :: a_nuc_kep(:)
+  ! real (rt), allocatable, save :: z_nuc_kep(:)
+  ! real (rt), allocatable, save :: be_nuc_kep(:)
+  ! character(len=5), allocatable, save :: nuc_name_kep(:)
+
+  ! real (rt), allocatable, save :: a_aux_c_kep(:)
+  ! real (rt), allocatable, save :: z_aux_c_kep(:)
+
+  ! --------------------
+
+
+
+
   
   contains
 
-  subroutine read_mesa_file( filename )
+  subroutine read_kepler_file( filename )
 
     use actual_network, only: nspec, nspec_evolve, aion, zion
     use bl_constants_module
@@ -44,16 +86,13 @@ module mesa_parser_module
     ! local variables
     character(len=1600)      :: line           ! read line for structure data
 
-    integer                  :: zone_read      ! read in zone number
-    real (rt)              :: lnrho_read     ! read in ln(density) [g cm^{-3}]
-    real (rt)              :: lnt_read       ! read in ln(temperature) [k]
-    real (rt)              :: lnr_read       ! read in ln(radius) [cm]
-    real (rt)              :: u_read         ! read in velocity [cm s^{-1}]
+    integer                :: nread     ! file unit number
+    integer                :: zone_read
+    real (rt)              :: dm0 ! single zone mass
+    real (rt)              :: abar0 ! mean nucleon number
     real (rt), allocatable :: xn_read(:)     ! read in progenitor composition array
 
-    real (rt) :: dum1    ! dummy variable
-    real (rt) :: dum2    ! dummy variable
-    real (rt) :: dum3    ! dummy variable
+
 
     real (rt) :: dr, dvol
 
@@ -67,16 +106,18 @@ module mesa_parser_module
 
     character(len=32) :: header_name
     character(len=4)  :: nnc_string
-    character(len=22) :: header_format
-    character(len=44) :: nonnse_format
+    character(len=20) :: header_format
+    character(len=36) :: nonnse_format
 
     ! formats
-    1012 format(59x,i5)
+    105 format (6x,12(1x,es24.17)) ! get cell vars (non-species info) 
+    4128 format (i5,7(1x,es24.16e3))
+    1012 format(39x,i5)
 
     ! open input data file
     open( newunit=nread, file=trim(adjustl(filename)), status='old', iostat=istate )
     if ( istate /= 0 ) then
-      call bl_error('Aborting now -- please supply MESA file')
+      call bl_error('Aborting now -- please supply KEPLER file')
     end if
 
     ! read progenitor file
@@ -86,84 +127,90 @@ module mesa_parser_module
 
       header_name = line(1:32)
 
-      if ( trim(adjustl(header_name)) == 'n_shells' ) then
-        read(line,1012) nx_mesa
+      if ( trim(adjustl(header_name)) == 'num_zones' ) then
+        read(line,1012) nx_kep
         cycle
       end if
 
-      if ( trim(adjustl(header_name)) == 'species' ) then
-        read(line,1012) nnc_mesa
+      if ( trim(adjustl(header_name)) == 'num_species' ) then
+        read(line,1012) nnc_kep
         exit
       end if
     end do
-    read(nread,*)
+    read(nread,*) line
+    read(nread,*) line
 
-    write(nnc_string,'(i4)') nnc_mesa
-    nonnse_format = '(i5,1x,7(3x,es23.16,1x),'//trim(adjustl(nnc_string))//'(3x,es23.16,1x))'
-    header_format = '(181x,'//trim(adjustl(nnc_string))//'(18x,a5,4x))'
+    write(nnc_string,'(i4)') nnc_kep
+   ! nonnse_format = '(i5,1x,7(3x,es23.16,1x),'//trim(adjustl(nnc_string))//'(3x,es23.16,1x))'
+   ! header_format = '(181x,'//trim(adjustl(nnc_string))//'(18x,a5,4x))'
+    nonnse_format = '(6x,12(1x,es24.17),'//trim(nnc_string)//'(1x,es24.17))'
+    header_format = '(306x,'//trim(nnc_string)//'(20x,a5))'
 
-    ! allocate and initialize mesa variables
-    allocate (x_e_mesa(nx_mesa+1))
-    allocate (dx_e_mesa(nx_mesa))
-    allocate (volx_e_mesa(nx_mesa+1))
-    allocate (volx_c_mesa(nx_mesa))
-    allocate (dvolx_e_mesa(nx_mesa))
-    allocate (dvol_e_mesa(nx_mesa))
-    allocate (dmass_e_mesa(nx_mesa))
-    allocate (u_c_mesa(nx_mesa))
-    allocate (rho_c_mesa(nx_mesa))
-    allocate (t_c_mesa(nx_mesa))
-    allocate (ye_c_mesa(nx_mesa))
-    allocate (xn_read(nnc_mesa))
-    allocate (xn_c_mesa(nx_mesa,nspec))
-    allocate (a_nuc_mesa(nnc_mesa))
-    allocate (z_nuc_mesa(nnc_mesa))
-    allocate (be_nuc_mesa(nnc_mesa))
-    allocate (name_nuc_mesa(nnc_mesa))
-    allocate (a_aux_c_mesa(nx_mesa))
-    allocate (z_aux_c_mesa(nx_mesa))
 
-    x_e_mesa = zero
-    dx_e_mesa = zero
-    volx_e_mesa = zero
-    volx_c_mesa = zero
-    dvolx_e_mesa = zero
-    dmass_e_mesa = zero
-    u_c_mesa = zero
-    rho_c_mesa = zero
-    t_c_mesa = zero
-    ye_c_mesa = zero
-    xn_read = zero
-    xn_c_mesa = zero
+     allocate(xn_full_kep(nx_kep+1,nnc_kep)) ! mass fractions
+     allocate(m0_kep(nx_kep)) ! enclosed mass [g]
+     allocate(dm0_kep(nx_kep)) ! cell mass [g]
+     allocate(r0_kep(nx_kep)) ! radius [cm]
+     allocate(vol_kep(nx_kep)) ! cell volume [cm^3]
+     allocate(rho0_kep(nx_kep)) ! density [g cm^{-3}]
+     allocate(temp0_kep(nx_kep)) ! temperature [K]
+     allocate(u0_kep(nx_kep)) ! velocity [cm s^{-1}]
+     allocate(ye0_kep(nx_kep)) ! electron fraction
+     allocate(p0_kep(nx_kep)) ! pressure [erg cm^{-3}]
+     allocate(e0_kep(nx_kep)) ! internal energy [erg g^{-1}]
+     allocate(s0_kep(nx_kep)) ! entropy 
+     allocate(ang_vel0_kep(nx_kep)) ! angular velocity 
+     allocate(a_nuc_kep(nnc_kep)) 
+     allocate(z_nuc_kep(nnc_kep))
+     allocate(be_nuc_kep(nnc_kep))
+     allocate(a_aux_nuc_kep(nnc_kep))
+     allocate(z_aux_nuc_kep(nnc_kep))
+     allocate(be_aux_nuc_kep(nnc_kep))
 
-    imin_mesa = 1
-    imax_mesa = nx_mesa
+     xn_full_kep = zero
+     m0_kep = zero
+     dm0_kep = zero
+     vol_kep = zero
+     r0_kep = zero
+     rho0_kep = zero
+     temp0_kep = zero
+     u0_kep = zero
+     ye0_kep = zero
+     p0_kep = zero
+     e0_kep = zero
+     s0_kep = zero
+     ang_vel0_kep = zero
+     a_nuc_kep = zero
+     z_nuc_kep = zero
+     be_nuc_kep = zero
 
-    read(nread,header_format) (name_nuc_mesa(i),i=1,nnc_mesa)
+
+
+    read(nread,header_format) nuc_name_kep
 
     ! convert species names to lower case
-    do i = 1, nnc_mesa
-      call nuc_rename(name_nuc_mesa(i))
+    do i = 1, nnc_kep
+      call nuc_rename(nuc_name_kep(i))
     end do
 
     ! get A and Z from names
-    call nucaz_from_name( name_nuc_mesa, a_nuc_mesa, z_nuc_mesa, be_nuc_mesa, nnc_mesa )
+    call nucaz_from_name( nuc_name_kep, a_nuc_kep, z_nuc_kep, be_nuc_kep, nnc_kep )
 
     ! create lookup tables for isotopes in castro net
     k = 0
-    net_to_castro(:) = nnc_mesa+1
+    net_to_castro(:) = nnc_kep+1
     do i = 1, nspec
-      do j = 1, nnc_mesa
-        if ( nint(aion(i)) == nint(a_nuc_mesa(j)) .and. nint(zion(i)) == nint(z_nuc_mesa(j)) ) then
+      do j = 1, nnc_kep
+        if ( nint(aion(i)) == nint(a_nuc_kep(j)) .and. nint(zion(i)) == nint(z_nuc_kep(j)) ) then
           k = k + 1
           net_to_castro(i) = j
           itmp(k) = i
           exit
         end if
       end do
-      if ( j > nnc_mesa ) then
+      if ( j > nnc_kep ) then
         if (parallel_IOProcessor()) then
-          write(*,'(2(a,i3),a)') ' could not find isotope (',nint(zion(i)),',',nint(aion(i)),') in MESA net'
+          write(*,'(2(a,i3),a)') ' could not find isotope (',nint(zion(i)),',',nint(aion(i)),') in KEPLER net'
         end if
       end if
     end do
@@ -172,64 +219,51 @@ module mesa_parser_module
       allocate (net_in_castro(k))
       net_in_castro(:) = itmp(1:k)
     else
-      call bl_error("no species in MESA net in CASTRO net")
+      call bl_error("no species in KEPLER net in CASTRO net")
     end if
 
-    ! read zones, MESA outputs these backwards (outer-most zones first)
-    do i = 1, nx_mesa
+    ! read zones
+    do i = 1, nx_kep
 
-      read(nread,nonnse_format) zone_read, lnrho_read, lnt_read, lnr_read, dum1, dum2, u_read, dum3, (xn_read(k),k=1,nnc_mesa)
-      j = nx_mesa-zone_read+2
-      rho_c_mesa(j-1) = exp( lnrho_read )
-      t_c_mesa(j-1) = exp( lnt_read )
-      x_e_mesa(j) = exp( lnr_read )
-      u_c_mesa(j-1) = u_read
-       
-      xn_c_mesa(j-1,net_in_castro) = xn_read(net_to_castro(net_in_castro))
+      read(nread,nonnse_format) zone_read, dm0_kep[i], m0_kep[i], r0_kep[i], u0_kep[i], roh0_kep[i], &
+                                 temp0_kep[i], p0_kep[i], e0_kep[i], s0_kep[i], ang_vel0_kep[i], &
+                                  dum1, ye0_kep[i], (xn_read(k),k=1,nnc_kep)
 
-      ye_c_mesa(j-1) = sum( z_nuc_mesa * xn_read / a_nuc_mesa ) / sum( xn_read )
+      xn_full_kep(i,net_in_castro) = xn_read(net_to_castro(net_in_castro))
+
+
+
+
 
       if ( nspec > nspec_evolve ) then
-        dum1 = sum( xn_read,                       mask=(net_to_castro==nnc_mesa+1) )
-        dum2 = sum( xn_read/a_nuc_mesa,            mask=(net_to_castro==nnc_mesa+1) )
-        dum3 = sum( xn_read*z_nuc_mesa/a_nuc_mesa, mask=(net_to_castro==nnc_mesa+1) )
-        xn_c_mesa(j-1,nspec)  = dum1
-        a_aux_c_mesa(j-1) = dum1 / dum2
-        z_aux_c_mesa(j-1) = dum1 / dum3
+        dum1 = sum( xn_read,                       mask=(net_to_castro==nnc_kep+1) )
+        dum2 = sum( xn_read/a_nuc_kep,             mask=(net_to_castro==nnc_kep+1) )
+        dum3 = sum( xn_read*z_nuc_kep/a_nuc_kep,   mask=(net_to_castro==nnc_kep+1) )
+        xn_full_kep(i,nspec)  = dum1
+        a_aux_nuc_kep(i) = dum1 / dum2
+        z_aux_nuc_kep(i) = dum1 / dum3
       else
-        a_aux_c_mesa(j-1) = zero
-        z_aux_c_mesa(j-1) = zero
+        a_aux_nuc_kep(i) = zero
+        z_aux_nuc_kep(i) = zero
       end if
     end do
 
-!   if (parallel_IOProcessor()) then
-!     write(*,'(a5,2f10.4)') (name_nuc_mesa(i), a_nuc_mesa(i), z_nuc_mesa(i), i=1,nnc_mesa)
-!     write(*,'(f10.4)') (ye_c_mesa(i),i=1,nx_mesa)
-!   end if
-
-!   xn_c_mesa(:,nspec) = max( zero, min( one, one - sum( xn_c_mesa(:,1:nspec-1), dim=1 ) ) )
-
     close(nread)
 
-    volx_e_mesa(1)     = third * x_e_mesa(1)**3
-    do j = 1, nx_mesa
-      dr               = x_e_mesa(j+1) - x_e_mesa(j)
-      dvolx_e_mesa(j)  = dr * ( x_e_mesa(j) * x_e_mesa(j+1) + dr * dr * third )
-      volx_e_mesa(j+1) = volx_e_mesa(j) + dvolx_e_mesa(j)
+    volx_e_kep(1)     = third*r0_kep(1)**3
+    do j = 1, nx_kep
+      dr = r0_kep(j+1)-r0_kep(j)
+      dvolx_e_kep(j) = dr*(r0_kep(j)*r0_kep(j+1)+dr*dr*third)
+      volx_e_kep(j+1) = volx_e_kep(j)+dvolx_e_kep(j)
     end do
-    volx_c_mesa(1:nx_mesa) = volx_e_mesa(1:nx_mesa) + half*dvolx_e_mesa(1:nx_mesa)
 
-    dvol_e_mesa(:) = four * m_pi * dvolx_e_mesa(:)
-    dmass_e_mesa(:) = dvol_e_mesa(:) * rho_c_mesa(:)
+    volx_c_kep(1:nx_kep) = volx_e_kep(1:nx_kep) + half*dvolx_e_kep(1:nx_kep)
 
-    ! overwrite the 'zeroth' zone
-!   rho_c_mesa(1) = rho_c_mesa(2)
-!   t_c_mesa(1) = t_c_mesa(2)
-!   u_c_mesa(1) = u_c_mesa(2)
-!   xn_c_mesa(1,:) = xn_c_mesa(2,:)
+    dvol_e_kep(:) = four*m_pi*dvolx_e_kep(:)
+
 
     return
-  end subroutine read_mesa_file
+  end subroutine read_kep_file
 
   subroutine nuc_rename( nname )
 
@@ -511,7 +545,7 @@ module mesa_parser_module
     return
   end subroutine nucaz_from_name
 
-  subroutine interp1d_mesa( x_out, state_mesa, state_out )
+  subroutine interp1d_kep( x_out, state_kep, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -521,7 +555,7 @@ module mesa_parser_module
 
     ! input variables
     real (rt), intent(in) :: x_out(:)
-    real (rt), intent(in) :: state_mesa(:)
+    real (rt), intent(in) :: state_kep(:)
 
     ! output variables
     real (rt), intent(out) :: state_out(size(x_out))
@@ -539,28 +573,28 @@ module mesa_parser_module
 
     if ( interp_method == 1 ) then
 
-      ix_max = imax_mesa
+      ix_max = imax_kep
       ix(:) = 1
       do i = 1, size(x_out)
-        if ( volx_out(i) <= volx_c_mesa(1) ) then
+        if ( volx_out(i) <= volx_c_kep(1) ) then
           ix(i) = 0
-        else if ( volx_out(i) >= volx_c_mesa(ix_max) ) then
+        else if ( volx_out(i) >= volx_c_kep(ix_max) ) then
           ix(i) = ix_max
         else
-          ix(i) = locate( volx_out(i), ix_max, volx_c_mesa ) - 1
+          ix(i) = locate( volx_out(i), ix_max, volx_c_kep ) - 1
         end if
       end do
-      call interp1d_linear( ix, ix_max, volx_c_mesa, state_mesa, volx_out, state_out )
+      call interp1d_linear( ix, ix_max, volx_c_kep, state_kep, volx_out, state_out )
     else if ( interp_method == 2 ) then
-      call interp1d_spline( volx_c_mesa, state_mesa, volx_out, state_out )
+      call interp1d_spline( volx_c_kep, state_kep, volx_out, state_out )
     else
       call bl_error("invalid value for interp_method")
     end if
 
     return
-  end subroutine interp1d_mesa
+  end subroutine interp1d_kep
 
-  subroutine interp2d_mesa( x_out, state_mesa, state_out )
+  subroutine interp2d_kep( x_out, state_kep, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -570,7 +604,7 @@ module mesa_parser_module
 
     ! input variables
     real (rt), intent(in) :: x_out(:,:)
-    real (rt), intent(in) :: state_mesa(:)
+    real (rt), intent(in) :: state_kep(:)
 
     ! output variables
     real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2))
@@ -588,32 +622,32 @@ module mesa_parser_module
 
     if ( interp_method == 1 ) then
 
-      ix_max = imax_mesa
+      ix_max = imax_kep
       do j = 1, size(x_out,2)
         ix(:) = 1
         do i = 1, size(x_out,1)
-          if ( volx_out(i,j) <= volx_c_mesa(1) ) then
+          if ( volx_out(i,j) <= volx_c_kep(1) ) then
             ix(i) = 0
-          else if ( volx_out(i,j) >= volx_c_mesa(ix_max) ) then
+          else if ( volx_out(i,j) >= volx_c_kep(ix_max) ) then
             ix(i) = ix_max
           else
-            ix(i) = locate( volx_out(i,j), ix_max, volx_c_mesa ) - 1
+            ix(i) = locate( volx_out(i,j), ix_max, volx_c_kep ) - 1
           end if
         end do
-        call interp1d_linear( ix, ix_max, volx_c_mesa, state_mesa, volx_out(:,j), state_out(:,j) )
+        call interp1d_linear( ix, ix_max, volx_c_kep, state_kep, volx_out(:,j), state_out(:,j) )
       end do
     else if ( interp_method == 2 ) then
       do j = 1, size(x_out,2)
-        call interp1d_spline( volx_c_mesa, state_mesa, volx_out(:,j), state_out(:,j) )
+        call interp1d_spline( volx_c_kep, state_kep, volx_out(:,j), state_out(:,j) )
       end do
     else
       call bl_error("invalid value for interp_method")
     end if
 
     return
-  end subroutine interp2d_mesa
+  end subroutine interp2d_kep
 
-  subroutine interp3d_mesa( x_out, state_mesa, state_out )
+  subroutine interp3d_kep( x_out, state_kep, state_out )
 
     use bl_constants_module
     use bl_error_module
@@ -623,7 +657,7 @@ module mesa_parser_module
 
     ! input variables
     real (rt), intent(in) :: x_out(:,:,:)
-    real (rt), intent(in) :: state_mesa(:)
+    real (rt), intent(in) :: state_kep(:)
 
     ! output variables
     real (rt), intent(out) :: state_out(size(x_out,1),size(x_out,2),size(x_out,3))
@@ -640,26 +674,26 @@ module mesa_parser_module
 
     if ( interp_method == 1 ) then
 
-      ix_max = imax_mesa
+      ix_max = imax_kep
       do k = 1, size(x_out,3)
         do j = 1, size(x_out,2)
           ix(:) = 1
           do i = 1, size(x_out,1)
-            if ( volx_out(i,j,k) <= volx_c_mesa(1) ) then
+            if ( volx_out(i,j,k) <= volx_c_kep(1) ) then
               ix(i) = 0
-            else if ( volx_out(i,j,k) >= volx_c_mesa(ix_max) ) then
+            else if ( volx_out(i,j,k) >= volx_c_kep(ix_max) ) then
               ix(i) = ix_max
             else
-              ix(i) = locate( volx_out(i,j,k), ix_max, volx_c_mesa ) - 1
+              ix(i) = locate( volx_out(i,j,k), ix_max, volx_c_kep ) - 1
             end if
           end do
-          call interp1d_linear( ix, ix_max, volx_c_mesa, state_mesa, volx_out(:,j,k), state_out(:,j,k) )
+          call interp1d_linear( ix, ix_max, volx_c_kep, state_kep, volx_out(:,j,k), state_out(:,j,k) )
         end do
       end do
     else if ( interp_method == 2 ) then
       do k = 1, size(x_out,3)
         do j = 1, size(x_out,2)
-          call interp1d_spline( volx_c_mesa, state_mesa, volx_out(:,j,k), state_out(:,j,k) )
+          call interp1d_spline( volx_c_kep, state_kep, volx_out(:,j,k), state_out(:,j,k) )
         end do
       end do
     else
@@ -667,6 +701,6 @@ module mesa_parser_module
     end if
 
     return
-  end subroutine interp3d_mesa
+  end subroutine interp3d_kep
 
-end module mesa_parser_module
+end module kep_parser_module
