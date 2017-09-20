@@ -6,6 +6,10 @@ module probdata_module
   character (256), save :: chimera_fname
   ! star model filename
   character (256), save :: star_fname
+ 
+  ! star model (1=MESA,2=KEPLER)
+  integer, save :: star_type
+
 
   ! flag for interpolation method (1=linear, 2=cubic spline)
   integer, save :: interp_method

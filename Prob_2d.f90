@@ -26,6 +26,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
 
   namelist /fortin/ chimera_fname
   namelist /fortin/ star_fname
+  namelist /fortin/ star_type
   namelist /fortin/ eos_input
   namelist /fortin/ interp_method
   namelist /fortin/ max_radius
@@ -68,6 +69,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   do_particles = .false.
   use_quad = .false.
   nquad = 2
+  star_type = 2
 
   ! Read namelists
   open(newunit=untin,file=probin(1:namlen),form='formatted',status='old')
@@ -422,6 +424,7 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
       call interp2d_star( r, z_aux_c_star, z_aux_i_star )
     end if
   end if
+
 
   do j = lo(2), hi(2)
     do i = lo(1), hi(1)

@@ -114,7 +114,7 @@ module star_parser_module
     	nonnse_format = '(i5,1x,7(3x,es23.16,1x),'//trim(adjustl(nnc_string))//'(3x,es23.16,1x))'
     	header_format = '(181x,'//trim(adjustl(nnc_string))//'(18x,a5,4x))'
     else
-   		nonnse_format = '(3x,i4,12(1x,es24.17),'//trim(nnc_string)//'(1x,es24.17))'
+   		nonnse_format = '(2x,i4,12(1x,es24.17),'//trim(nnc_string)//'(1x,es24.17))'
    		header_format = '(306x,'//trim(adjustl(nnc_string))//'(20x,a5))'
    	endif
 
@@ -259,7 +259,7 @@ module star_parser_module
 
     dvol_e_star(:) = four * m_pi * dvolx_e_star(:)
     dmass_e_star(:) = dvol_e_star(:) * rho_c_star(:)
-
+    
     ! overwrite the 'zeroth' zone
 !   rho_c_star(1) = rho_c_star(2)
 !   t_c_star(1) = t_c_star(2)
