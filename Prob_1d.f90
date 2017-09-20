@@ -2,7 +2,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
 
   use probdata_module
   use chimera_parser_module
-  use mesa_parser_module
+  use star_parser_module
   use bl_constants_module
   use bl_error_module
   use amrex_fort_module, only: rt => amrex_real
@@ -20,11 +20,11 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
 
   integer :: untin,i,dir
   real (rt) :: r, dr, dvol, volr, dvolr, gr
-  real (rt) :: mass_chim, mass_mesa, vol_chim, vol_mesa
+  real (rt) :: mass_chim, mass_star, vol_chim, vol_star
   real (rt) :: domega, point_mass, mass_inner
 
   namelist /fortin/ chimera_fname
-  namelist /fortin/ mesa_fname
+  namelist /fortin/ star_fname
   namelist /fortin/ eos_input
   namelist /fortin/ interp_method
   namelist /fortin/ max_radius
@@ -55,7 +55,7 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
 
   ! set namelist defaults
   chimera_fname = ""
-  mesa_fname = ""
+  star_fname = ""
   interp_method = 1
   eos_input = eos_input_rt
   max_radius = zero
@@ -91,13 +91,13 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   call open_chimera_file(chimera_fname)
   call read_chimera_file
 
-  ! load mesa model
-  if ( len_trim(mesa_fname) > 0 ) then
-    call read_mesa_file(mesa_fname)
+  ! load star model
+  if ( len_trim(star_fname) > 0 ) then
+    call read_star_file(star_fname)
   end if
 
   ! set the max radius to use chimera data
-  ! if r > max_radius, use mesa data
+  ! if r > max_radius, use star data
   if ( max_radius <= zero ) then
     ! by default, use the volume-center of outer-most chimera zone (excluding ghost zones)
     ! this obviates the need for any extrapolation of chimera data
@@ -157,30 +157,30 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
     end if
   end do
 
-  ! integrate mass from mesa data on castro grid
-  mass_mesa = zero
-  vol_mesa = zero
-  do i = 1, imax_mesa
-    if ( x_e_mesa(i+1) > max_radius .and. &
-    &    x_e_mesa(i)   < probhi(1) ) then
+  ! integrate mass from star data on castro grid
+  mass_star = zero
+  vol_star = zero
+  do i = 1, imax_star
+    if ( x_e_star(i+1) > max_radius .and. &
+    &    x_e_star(i)   < probhi(1) ) then
 
       domega = four * m_pi
 
       dvolr = zero
-      if ( x_e_mesa(i+1) > probhi(1) ) then
-        dr = x_e_mesa(i+1) - probhi(1)
-        dvolr = dvolr + dr * ( probhi(1) * x_e_mesa(i) + dr * dr * third )
+      if ( x_e_star(i+1) > probhi(1) ) then
+        dr = x_e_star(i+1) - probhi(1)
+        dvolr = dvolr + dr * ( probhi(1) * x_e_star(i) + dr * dr * third )
       end if
 
-      if ( x_e_mesa(i) < max_radius ) then
-        dr = max_radius - x_e_mesa(i) 
-        dvolr = dvolr + dr * ( x_e_mesa(i) * max_radius + dr * dr * third )
+      if ( x_e_star(i) < max_radius ) then
+        dr = max_radius - x_e_star(i) 
+        dvolr = dvolr + dr * ( x_e_star(i) * max_radius + dr * dr * third )
       end if
 
-      dvol = domega * ( dvolx_e_mesa(i) - dvolr )
+      dvol = domega * ( dvolx_e_star(i) - dvolr )
 
-      vol_mesa = vol_mesa + dvol
-      mass_mesa = mass_mesa + dvol * rho_c_mesa(i)
+      vol_star = vol_star + dvol
+      mass_star = mass_star + dvol * rho_c_star(i)
 
     end if
   end do
@@ -200,11 +200,11 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   if (parallel_IOProcessor()) then
     write(*,'(a,2es23.15)') 'average g(r) (chimera)        =',r,gr
 
-    write(*,'(a,2es23.15)') 'total mass   (chimera, mesa)  =',mass_chim,mass_mesa
-    write(*,'(a,es23.15)')  'total mass   (chimera + mesa) =',mass_chim+mass_mesa
+    write(*,'(a,2es23.15)') 'total mass   (chimera, star)  =',mass_chim,mass_star
+    write(*,'(a,es23.15)')  'total mass   (chimera + star) =',mass_chim+mass_star
 
-    write(*,'(a,2es23.15)') 'total volume (chimera, mesa)  =',vol_chim,vol_mesa
-    write(*,'(a,es23.15)')  'total volume (chimera + mesa) =',vol_chim+vol_mesa
+    write(*,'(a,2es23.15)') 'total volume (chimera, star)  =',vol_chim,vol_star
+    write(*,'(a,es23.15)')  'total volume (chimera + star) =',vol_chim+vol_star
     dr = probhi(1) - problo(1)
     write(*,'(a,es23.15)')  'total volume (castro)         =',four * m_pi * dr * ( problo(1) * probhi(1) + dr * dr * third )
   end if
@@ -273,7 +273,7 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
   use parallel, only: parallel_IOProcessor
   use probdata_module
   use chimera_parser_module
-  use mesa_parser_module
+  use star_parser_module
   use quadrature_module, only: xquad, wquad, quad_avg
 
   implicit none
@@ -300,13 +300,13 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
   real (rt) :: a_aux_i_chim(lo(1):hi(1))
   real (rt) :: z_aux_i_chim(lo(1):hi(1))
 
-  real (rt) :: rho_i_mesa(lo(1):hi(1))
-  real (rt) :: t_i_mesa(lo(1):hi(1))
-  real (rt) :: xn_i_mesa(nspec,lo(1):hi(1))
-  real (rt) :: u_i_mesa(lo(1):hi(1))
-  real (rt) :: ye_i_mesa(lo(1):hi(1))
-  real (rt) :: a_aux_i_mesa(lo(1):hi(1))
-  real (rt) :: z_aux_i_mesa(lo(1):hi(1))
+  real (rt) :: rho_i_star(lo(1):hi(1))
+  real (rt) :: t_i_star(lo(1):hi(1))
+  real (rt) :: xn_i_star(nspec,lo(1):hi(1))
+  real (rt) :: u_i_star(lo(1):hi(1))
+  real (rt) :: ye_i_star(lo(1):hi(1))
+  real (rt) :: a_aux_i_star(lo(1):hi(1))
+  real (rt) :: z_aux_i_star(lo(1):hi(1))
 
   real (rt) :: xg(nquad)
   real (rt) :: rho_quad(nquad)
@@ -391,24 +391,24 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
     call interp1d_chimera( xcen, z_aux_c_chim(:,1,1), z_aux_i_chim )
   end if
 
-  if ( len_trim(mesa_fname) > 0 ) then
-    call interp1d_mesa( xcen, u_c_mesa, u_i_mesa )
-    call interp1d_mesa( xcen, rho_c_mesa, rho_i_mesa )
-    call interp1d_mesa( xcen, t_c_mesa, t_i_mesa )
+  if ( len_trim(star_fname) > 0 ) then
+    call interp1d_star( xcen, u_c_star, u_i_star )
+    call interp1d_star( xcen, rho_c_star, rho_i_star )
+    call interp1d_star( xcen, t_c_star, t_i_star )
     do n = 1, nspec
-      call interp1d_mesa( xcen, xn_c_mesa(:,n), xn_i_mesa(n,:) )
+      call interp1d_star( xcen, xn_c_star(:,n), xn_i_star(n,:) )
     end do
-    call interp1d_mesa( xcen, ye_c_mesa, ye_i_mesa )
-    call interp1d_mesa( xcen, a_aux_c_mesa, a_aux_i_mesa )
-    call interp1d_mesa( xcen, z_aux_c_mesa, z_aux_i_mesa )
+    call interp1d_star( xcen, ye_c_star, ye_i_star )
+    call interp1d_star( xcen, a_aux_c_star, a_aux_i_star )
+    call interp1d_star( xcen, z_aux_c_star, z_aux_i_star )
   end if
 
   do i = lo(1), hi(1)
 
     xn_i_chim(:,i) = xn_i_chim(:,i) / sum( xn_i_chim(:,i) )
-    xn_i_mesa(:,i) = xn_i_mesa(:,i) / sum( xn_i_mesa(:,i) )
+    xn_i_star(:,i) = xn_i_star(:,i) / sum( xn_i_star(:,i) )
 
-    if ( xcen(i) <= max_radius .or. len_trim(mesa_fname) == 0 ) then
+    if ( xcen(i) <= max_radius .or. len_trim(star_fname) == 0 ) then
 
       state(i,UMX) = u_i_chim(i)
       state(i,UMY) = v_i_chim(i)
@@ -435,22 +435,22 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
 
     else
 
-      state(i,UMX) = u_i_mesa(i)
+      state(i,UMX) = u_i_star(i)
       state(i,UMY) = zero
       state(i,UMZ) = zero
 
-      eos_state%rho = rho_i_mesa(i)
-      eos_state%T = t_i_mesa(i)
-      eos_state%xn(:) = xn_i_mesa(:,i)
+      eos_state%rho = rho_i_star(i)
+      eos_state%T = t_i_star(i)
+      eos_state%xn(:) = xn_i_star(:,i)
       if ( naux == 1 ) then
-        eos_state%aux(1) = min( maxye, max( minye, ye_i_mesa(i) ) )
+        eos_state%aux(1) = min( maxye, max( minye, ye_i_star(i) ) )
       else if ( naux == 2 ) then
-        eos_state%aux(1) = a_aux_i_mesa(i)
-        eos_state%aux(2) = z_aux_i_mesa(i)
+        eos_state%aux(1) = a_aux_i_star(i)
+        eos_state%aux(2) = z_aux_i_star(i)
       else if ( naux == 3 ) then
-        eos_state%aux(1) = min( maxye, max( minye, ye_i_mesa(i) ) )
-        eos_state%aux(2) = a_aux_i_mesa(i)
-        eos_state%aux(3) = z_aux_i_mesa(i)
+        eos_state%aux(1) = min( maxye, max( minye, ye_i_star(i) ) )
+        eos_state%aux(2) = a_aux_i_star(i)
+        eos_state%aux(3) = z_aux_i_star(i)
       end if
 
       call eos(eos_input_rt, eos_state)

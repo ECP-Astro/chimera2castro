@@ -4,8 +4,8 @@ module probdata_module
 
   ! chimera hdf5 filename
   character (256), save :: chimera_fname
-  ! mesa model filename
-  character (256), save :: mesa_fname
+  ! star model filename
+  character (256), save :: star_fname
 
   ! flag for interpolation method (1=linear, 2=cubic spline)
   integer, save :: interp_method
@@ -14,7 +14,7 @@ module probdata_module
   integer, save :: eos_input
 
   ! max radius to use chimera data
-  ! if r > max_radius, use mesa data
+  ! if r > max_radius, use star data
   real (rt), save :: max_radius
 
   ! inner boundary for chimera data
