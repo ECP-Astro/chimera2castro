@@ -60,7 +60,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   chimera_fname = ""
   star_fname = ""
   interp_method = 1
-  eos_input = eos_input_rt
+  eos_input = eos_input_rp
   max_radius = ZERO
   radius_inner = ZERO
   rho_inner = ZERO
@@ -236,7 +236,7 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   use eos_module
   use eos_type_module
   use meth_params_module, only : NVAR, URHO, UMX, UMY, UMZ, UEINT, UFS, UTEMP, UEDEN, UFX, UFA
-  use network, only: nspec, naux
+  use network
   use probdata_module
   use chimera_parser_module
   use star_parser_module
@@ -290,6 +290,10 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   real (rt) :: ye_quad(nquad,nquad)
   real (rt) :: a_aux_quad(nquad,nquad)
   real (rt) :: z_aux_quad(nquad,nquad)
+
+
+  real (rt) :: xn_renorm(nspec)
+  real (rt) :: ainv, ny, zy, zny, zzy, aa, zz, nn, alpha, beta
 
   type (eos_t) :: eos_state
  
@@ -429,8 +433,8 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   do j = lo(2), hi(2)
     do i = lo(1), hi(1)
 
-      xn_i_chim(:,i,j) = xn_i_chim(:,i,j) / sum( xn_i_chim(:,i,j) )
-      xn_i_star(:,i,j) = xn_i_star(:,i,j) / sum( xn_i_star(:,i,j) )
+    !  xn_i_chim(:,i,j) = xn_i_chim(:,i,j) / sum( xn_i_chim(:,i,j) )
+    !  xn_i_star(:,i,j) = xn_i_star(:,i,j) / sum( xn_i_star(:,i,j) )
 
       if ( r(i,j) <= max_radius .or. len_trim(star_fname) == 0 ) then
 
@@ -454,7 +458,51 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
               eos_state%T = t_i_chim(i,j)
           end select
         end if
-        eos_state%xn(:) = xn_i_chim(:,i,j)
+
+
+        ! renormalize chimera mass fractions
+
+        ny = 0.e0_rt
+        zy = 0.e0_rt
+        zny = 0.e0_rt
+        zzy = 0.e0_rt
+
+        do n = 1, nspec
+
+          xn_renorm(n) = max(1.e-99_rt,min(1.e0_rt,xn_i_chim(n,i,j)))
+          aa = aion(n)
+          zz = zion(n)
+          nn = nion(n)
+          ainv = 1.e0_rt / aa
+          ny = ny + xn_renorm(n)*nn*ainv
+          zy = zy + xn_renorm(n)*zz*ainv
+          zny = zny + xn_renorm(n)*zz*nn*ainv*ainv
+          zzy = zzy + xn_renorm(n)*zz*zz*ainv*ainv
+        enddo
+
+
+        beta = (ye_i_chim(i,j)*ny-zny) / (ny*zzy - zy*zny)
+        alpha = (1.e0_rt - beta*zy) / ny
+
+       do n = 1,nspec
+
+        aa = aion(n)
+        zz = zion(n)
+        nn = nion(n)
+
+        xn_renorm(n) = xn_renorm(n)*(alpha*nn+beta*zz) / aa
+        xn_renorm(n) = max(1.e-99_rt,min(1.e0_rt,xn_renorm(n)))
+
+       enddo
+
+
+
+
+
+
+
+
+        eos_state%xn(:) = xn_renorm(:)
         if ( naux == 1 ) then
           eos_state%aux = min( maxye, max( minye, ye_i_chim(i,j) ) )
         else if ( naux == 2 ) then
@@ -500,9 +548,49 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
       else
 
+
+        ! renormalize star mass fractions
+
+
+        ny = 0.e0_rt
+        zy = 0.e0_rt
+        zny = 0.e0_rt
+        zzy = 0.e0_rt
+
+        do n = 1, nspec
+
+          xn_renorm(n) = max(1.e-99_rt,min(1.e0_rt,xn_i_star(n,i,j)))
+          aa = aion(n)
+          zz = zion(n)
+          nn = nion(n)
+          ainv = 1.e0_rt / aa
+          ny = ny + xn_renorm(n)*nn*ainv
+          zy = zy + xn_renorm(n)*zz*ainv
+          zny = zny + xn_renorm(n)*zz*nn*ainv*ainv
+          zzy = zzy + xn_renorm(n)*zz*zz*ainv*ainv
+        enddo
+
+
+        beta = (ye_i_star(i,j)*ny-zny) / (ny*zzy - zy*zny)
+        alpha = (1.e0_rt - beta*zy) / ny
+
+       do n = 1,nspec
+
+        aa = aion(n)
+        zz = zion(n)
+        nn = nion(n)
+
+        xn_renorm(n) = xn_renorm(n)*(alpha*nn+beta*zz) / aa
+        xn_renorm(n) = max(1.e-99_rt,min(1.e0_rt,xn_renorm(n)))
+
+       enddo
+
+
+
+
         eos_state%rho = rho_i_star(i,j)
         eos_state%T = t_i_star(i,j)
-        eos_state%xn(:) = xn_i_star(:,i,j)
+        eos_state%xn(:) = xn_renorm(:)
         if ( naux == 1 ) then
           eos_state%aux = min( maxye, max( minye, ye_i_star(i,j) ) )
         else if ( naux == 2 ) then
@@ -554,4 +642,8 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
 
   return
 end subroutine ca_initdata
+
+
+
+
 
