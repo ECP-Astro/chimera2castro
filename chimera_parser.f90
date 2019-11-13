@@ -6,7 +6,7 @@ module chimera_parser_module
   !
   ! composition is assumed to be in terms of mass fractions     
 
-  use parallel, only: parallel_IOProcessor
+  use amrex_paralleldescriptor_module, only: parallel_IOProcessor=>amrex_pd_ioprocessor
   use network
   use amrex_fort_module, only: rt => amrex_real
   use hdf5_read_write
@@ -124,8 +124,8 @@ contains
 
   subroutine open_chimera_file(fname)
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
 
     character (*), intent(in) :: fname
 
@@ -157,8 +157,8 @@ contains
   subroutine read_chimera_file
 
     use actual_network, only: nspec, aion, zion
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use fundamental_constants_module
     use probdata_module
 
@@ -599,8 +599,8 @@ contains
 
   subroutine grid_bc( xag, xcg, dxg, nmin, nmax, nleft, nright )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
 
     !  boundary condition flags : nleft, nright
     !    = 0 : reflecting
@@ -675,8 +675,8 @@ contains
 
   subroutine interp1dvol_chimera( x_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
@@ -724,8 +724,8 @@ contains
 
   subroutine interp1drad_chimera( x_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
@@ -769,8 +769,8 @@ contains
 
   subroutine interp2dvol_chimera( x_out, y_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp2d_linear, interp2d_spline
     use probdata_module, only: interp_method
@@ -840,8 +840,8 @@ contains
 
   subroutine interp2drad_chimera( x_out, y_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp2d_linear, interp2d_spline
     use probdata_module, only: interp_method
@@ -906,8 +906,8 @@ contains
 
   subroutine interp2dvol_quad_chimera( x_out, y_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use model_interp_module, only: interp2d_linear, interp2d_spline
     use interpolate_module, only: locate
     use probdata_module, only: interp_method, nquad
@@ -999,8 +999,8 @@ contains
 
   subroutine interp2drad_quad_chimera( x_out, y_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use model_interp_module, only: interp2d_linear, interp2d_spline
     use interpolate_module, only: locate
     use probdata_module, only: interp_method, nquad
@@ -1091,8 +1091,8 @@ contains
 
   subroutine interp3dvol_chimera( x_out, y_out, z_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp3d_linear, interp3d_spline
     use probdata_module, only: interp_method
@@ -1183,8 +1183,8 @@ contains
 
   subroutine interp3drad_chimera( x_out, y_out, z_out, state_chim, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp3d_linear, interp3d_spline
     use probdata_module, only: interp_method

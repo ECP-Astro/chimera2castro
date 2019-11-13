@@ -3,8 +3,8 @@ subroutine PROBINIT (init,name,namlen,problo,probhi)
   use probdata_module
   use chimera_parser_module
   use star_parser_module
-  use bl_constants_module
-  use bl_error_module
+  use amrex_constants_module
+  use amrex_error_module
   use amrex_fort_module, only: rt => amrex_real
   use eos_module
   use parallel, only: parallel_IOProcessor
@@ -290,8 +290,8 @@ subroutine ca_initdata(level,time,lo,hi,nvar, &
                        state,state_l1,state_l2,state_l3,state_h1,state_h2,state_h3, &
                        dx,xlo,xhi)
 
-  use bl_constants_module
-  use bl_error_module
+  use amrex_constants_module
+  use amrex_error_module
   use amrex_fort_module, only: rt => amrex_real
   use fundamental_constants_module
   use eos_module

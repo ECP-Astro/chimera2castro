@@ -1,7 +1,7 @@
 module model_interp_module
 
   use amrex_fort_module, only: rt => amrex_real
-  use bl_constants_module
+  use amrex_constants_module
 
   implicit none
 
@@ -200,7 +200,7 @@ contains
 
   subroutine interp2d_spline( x_in, y_in, f_in, x_out, y_out, f_out )
 
-    use bl_error_module
+    use amrex_error_module
     use bspline_module, only: db2ink, db2val
 
     ! input variables
@@ -339,7 +339,7 @@ contains
 
   subroutine interp3d_spline( x_in, y_in, z_in, f_in, x_out, y_out, z_out, f_out )
 
-    use bl_error_module
+    use amrex_error_module
     use bspline_module, only: db3ink, db3val
 
     ! input variables

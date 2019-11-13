@@ -1,6 +1,6 @@
 module quadrature_module
 
-  use bl_constants_module
+  use amrex_constants_module
   use amrex_fort_module, only: rt => amrex_real
 
   implicit none
@@ -122,7 +122,7 @@ contains
 
   subroutine gquad( nquad, x, wt )
 
-    use bl_error_module
+    use amrex_error_module
 
     ! input variables
     integer, intent(in) :: nquad  ! number of points of the quadrature

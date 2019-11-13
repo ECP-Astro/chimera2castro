@@ -13,7 +13,7 @@ contains
     !$acc routine seq
 
     use network, only: naux, nspec, nspec_evolve, aion, zion, aion_inv
-    use bl_constants_module, only: one
+    use amrex_constants_module, only: one
     use eos_type_module, only: eos_t, composition, minye, maxye
 
     implicit none

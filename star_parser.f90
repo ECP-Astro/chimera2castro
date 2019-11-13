@@ -1,6 +1,6 @@
 module star_parser_module
 
-  use parallel, only: parallel_IOProcessor
+  use amrex_paralleldescriptor_module, only: parallel_IOProcessor=>amrex_pd_ioprocessor
   use amrex_fort_module, only: rt => amrex_real
   use probdata_module, only: interp_method, star_type
 
@@ -37,7 +37,7 @@ module star_parser_module
   subroutine read_star_file( filename )
 
     use actual_network, only: nspec, nspec_evolve, aion, zion
-    use bl_constants_module
+    use amrex_constants_module
 
     ! input variables
     character(len=*), intent(in) :: filename
@@ -551,8 +551,8 @@ module star_parser_module
 
   subroutine interp1dvol_star( x_out, state_star, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
@@ -601,8 +601,8 @@ module star_parser_module
 
   subroutine interp1drad_star( x_out, state_star, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
@@ -647,8 +647,8 @@ module star_parser_module
 
   subroutine interp2dvol_star( x_out, state_star, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
@@ -700,8 +700,8 @@ module star_parser_module
 
   subroutine interp2drad_star( x_out, state_star, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
@@ -750,8 +750,8 @@ module star_parser_module
 
   subroutine interp3dvol_star( x_out, state_star, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method
@@ -806,8 +806,8 @@ module star_parser_module
 
   subroutine interp3drad_star( x_out, state_star, state_out )
 
-    use bl_constants_module
-    use bl_error_module
+    use amrex_constants_module
+    use amrex_error_module
     use interpolate_module, only: locate
     use model_interp_module, only: interp1d_linear, interp1d_spline
     use probdata_module, only: interp_method

@@ -3,8 +3,8 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   use probdata_module
   use chimera_parser_module
   use star_parser_module
-  use bl_constants_module
-  use bl_error_module
+  use amrex_constants_module
+  use amrex_error_module
   use amrex_fort_module, only: rt => amrex_real
   use eos_module
   use eos_type_module
@@ -229,10 +229,10 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
                        state,state_l1,state_l2,state_h1,state_h2, &
                        delta,xlo,xhi)
 
-  use bl_error_module
+  use amrex_error_module
   use amrex_fort_module, only: rt => amrex_real
   use fundamental_constants_module
-  use bl_constants_module
+  use amrex_constants_module
   use eos_module
   use eos_type_module
   use meth_params_module, only : NVAR, URHO, UMX, UMY, UMZ, UEINT, UFS, UTEMP, UEDEN, UFX, UFA

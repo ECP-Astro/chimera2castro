@@ -62,11 +62,11 @@ Castro::problem_post_init ()
 
     const MultiFab& state = get_new_data(State_Type);
     
-    Array<Real> radial_mass(n1d, 0.0);
+    Vector<Real> radial_mass(n1d, 0.0);
 
 #ifdef _OPENMP
     int nthreads = omp_get_max_threads();
-    Array< Array<Real> > priv_radial_mass(nthreads);
+    Vector< Vector<Real> > priv_radial_mass(nthreads);
     for (int i=0; i<nthreads; i++) {
 		priv_radial_mass[i].resize(n1d,0.0);
     }
@@ -79,12 +79,12 @@ Castro::problem_post_init ()
     {
 #ifdef _OPENMP
 	int tid = omp_get_thread_num();
-	Array<Real>& mass = priv_radial_mass[tid];
+	Vector<Real>& mass = priv_radial_mass[tid];
 #else
-	Array<Real>& mass = radial_mass;
+	Vector<Real>& mass = radial_mass;
 #endif
 	
-	Array<Real> vol(n1d, 0.0);
+	Vector<Real> vol(n1d, 0.0);
 	
 	for (MFIter mfi(state,true); mfi.isValid(); ++mfi)
 	{
@@ -109,8 +109,8 @@ Castro::problem_post_init ()
 
     ParallelDescriptor::ReduceRealSum(radial_mass.dataPtr(),n1d);
 
-    Array<Real> grav(n1d, 0.0);
-    Array<Real> phi(n1d, 0.0);
+    Vector<Real> grav(n1d, 0.0);
+    Vector<Real> phi(n1d, 0.0);
     // Integrate radially outward to define the gravity
     ca_integrate_phi(radial_mass.dataPtr(),grav.dataPtr(),
                      phi.dataPtr(),&dr,&n1d);
@@ -146,8 +146,8 @@ Castro::problem_post_init ()
     int level = parent->finestLevel();
     int drdxfac = gravity->drdxfac;
 
-    Array< Array<Real> > radial_mass(MAX_LEV);
-    Array< Array<Real> > radial_vol(MAX_LEV);
+    Vector< Vector<Real> > radial_mass(MAX_LEV);
+    Vector< Vector<Real> > radial_vol(MAX_LEV);
 
     for (int lev = 0; lev <= level; lev++)
     {
@@ -189,11 +189,11 @@ Castro::problem_post_init ()
 #ifdef _OPENMP
 	int nthreads = omp_get_max_threads();
 
-	PArray< Array<Real> > priv_radial_mass(nthreads, PArrayManage);
-	PArray< Array<Real> > priv_radial_vol (nthreads, PArrayManage);
+	PArray< Vector<Real> > priv_radial_mass(nthreads, PArrayManage);
+	PArray< Vector<Real> > priv_radial_vol (nthreads, PArrayManage);
 	for (int i=0; i<nthreads; i++) {
-	    priv_radial_mass.set(i, new Array<Real>(n1d,0.0));
-	    priv_radial_vol.set (i, new Array<Real>(n1d,0.0));
+	    priv_radial_mass.set(i, new Vector<Real>(n1d,0.0));
+	    priv_radial_vol.set (i, new Vector<Real>(n1d,0.0));
 	}
 #pragma omp parallel
 #endif
@@ -236,7 +236,7 @@ Castro::problem_post_init ()
     }
 
     int n1d = drdxfac * get_numpts();
-    Array<Real> radial_mass_summed(n1d,0.0);
+    Vector<Real> radial_mass_summed(n1d,0.0);
 
     // First add the contribution from this level
     for (int i = 0; i < n1d; i++)
@@ -271,8 +271,8 @@ Castro::problem_post_init ()
     //   the domain.
     // ***************************************************************** //
 
-    Array<Real> radial_vol_summed(n1d,0.0);
-    Array<Real> radial_den_summed(n1d,0.0);
+    Vector<Real> radial_vol_summed(n1d,0.0);
+    Vector<Real> radial_den_summed(n1d,0.0);
 
     // First add the contribution from this level
     for (int i = 0; i < n1d; i++)
@@ -316,7 +316,7 @@ Castro::problem_post_init ()
 #endif
 #endif
 
-    Array<Real> radial_grav(n1d, 0.0);
+    Vector<Real> radial_grav(n1d, 0.0);
 
 
     // Integrate radially outward to define the gravity

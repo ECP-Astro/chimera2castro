@@ -18,7 +18,7 @@ COMP	   = gnu
 DEFINES += -DDO_PROBLEM_POST_INIT
 
 USE_MPI    = TRUE
-USE_OMP    = TRUE
+USE_OMP    = FALSE
 
 USE_GRAV   = TRUE
 USE_GR     = FALSE
@@ -34,6 +34,9 @@ USE_MODELPARSER  = TRUE
 
 USE_HDF5   = TRUE
 
+USE_FORTRAN_INTERFACE = TRUE
+USE_F_INTERFACES = TRUE
+
 libraries += -lhdf5 -lhdf5_fortran -lz
 LDFLAGS += -L$(HDF5_DIR)/lib
 VPATH_LOCATIONS += $(HDF5_DIR)/include
@@ -43,17 +46,17 @@ FINCLUDE_LOCATIONS += $(HDF5_DIR)/include
 ifdef MICROPHYSICS_HOME
 
 # This sets the EOS directory in $(MICROPHYSICS_HOME)/eos
-EOS_dir     := helmholtz
-#EOS_dir     := stellarcollapse
+EOS_DIR     := helmholtz
+#EOS_DIR     := stellarcollapse
 
 # This sets the network directory in $(MICROPHYSICS_HOME)/networks
 #Network_dir := aprox21
 #Network_dir := anp56
 #Network_dir := general_null
-Network_dir := aprox13
-GENERAL_NET_INPUTS = $(MICROPHYSICS_HOME)/networks/$(Network_dir)/anp56.net
+NETWORK_DIR := aprox13
+GENERAL_NET_INPUTS = $(MICROPHYSICS_HOME)/networks/$(NETWORK_DIR)/anp56.net
 
-INTEGRATOR_DIR := BS
+INTEGRATOR_DIR := VODE
 
 else
 

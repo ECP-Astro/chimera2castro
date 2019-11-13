@@ -1,8 +1,8 @@
 module advection_module
 
-  use bl_constants_module
+  use amrex_constants_module
 
-  use bl_fort_module, only : rt => c_real
+  use amrex_fort_module, only : rt => c_real
   implicit none
 
   private
@@ -69,7 +69,7 @@ contains
     use actual_network, only : nspec, naux
     use eos_module, only : eos_t, eos_input_rt, eos
     use riemann_module, only: cmpflx, shock
-    use bl_constants_module
+    use amrex_constants_module
 #ifdef RADIATION
     use rad_params_module, only : ngroups
     use trace_ppm_rad_module, only : tracexy_ppm_rad, tracez_ppm_rad
@@ -80,7 +80,7 @@ contains
     use meth_params_module, only : USHK
 #endif
 
-    use bl_fort_module, only : rt => c_real
+    use amrex_fort_module, only : rt => c_real
     implicit none
 
     integer, intent(in) :: qd_lo(3), qd_hi(3)
@@ -941,7 +941,7 @@ contains
     use parallel, only: parallel_IOProcessor
     use iso_fortran_env, only: stdout=>output_unit
 
-    use bl_fort_module, only : rt => c_real
+    use amrex_fort_module, only : rt => c_real
     integer, intent(in) ::       lo(3),       hi(3)
     integer, intent(in) ::   uin_lo(3),   uin_hi(3)
     integer, intent(in) ::     q_lo(3),     q_hi(3)
