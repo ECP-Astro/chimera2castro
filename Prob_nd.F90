@@ -8,7 +8,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   use amrex_fort_module, only: rt => amrex_real
   use eos_module
   use eos_type_module
-  use parallel, only: parallel_IOProcessor
+  use amrex_paralleldescriptor_module, only: amrex_pd_ioprocessor
   use prob_params_module, only: center
   use interpolate_module, only: locate
   use model_interp_module, only: interp1d_linear
@@ -17,7 +17,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   implicit none
   integer :: init, namlen
   integer :: name(namlen)
-  real (rt) :: problo(2), probhi(2)
+  real (rt) :: problo(3), probhi(3)
 
   integer :: untin,i,j,k,dir
   real (rt) :: probhi_r, rcyl, zcyl, r, dr, dvol, volr, dvolr, gr
@@ -186,7 +186,7 @@ subroutine amrex_probinit (init,name,namlen,problo,probhi) bind(c)
   end if
   call interp1d_linear( i, imax_chim, volx_c_chim, gravx_c_avg_chim, volr, gr )
 
-  if (parallel_IOProcessor()) then
+  if (amrex_pd_ioprocessor()) then
     write(*,'(a,2es23.15)') 'average g(r) (chimera)        =',r,gr
 
     write(*,'(a,2es23.15)') 'total mass   (chimera, star)  =',mass_chim,mass_star
@@ -226,7 +226,7 @@ end subroutine amrex_probinit
 ! ::: -----------------------------------------------------------
 
 subroutine ca_initdata(level,time,lo,hi,nscal, &
-                       state,state_l1,state_l2,state_h1,state_h2, &
+                       state, state_lo, state_hi, &
                        delta,xlo,xhi)
 
   use amrex_error_module
@@ -245,10 +245,10 @@ subroutine ca_initdata(level,time,lo,hi,nscal, &
   implicit none
 
   integer :: level, nscal
-  integer :: lo(2), hi(2)
-  integer :: state_l1,state_l2,state_h1,state_h2
-  double precision :: xlo(2), xhi(2), time, delta(2)
-  double precision :: state(state_l1:state_h1,state_l2:state_h2,NVAR)
+  integer :: lo(3), hi(3)
+  integer :: state_lo(3), state_hi(3)
+  double precision :: xlo(3), xhi(3), time, delta(3)
+  double precision :: state(state_lo(1):state_hi(1),state_lo(2):state_hi(2),NVAR)
 
   ! local variables
   real (rt) :: xcen(lo(1):hi(1))
